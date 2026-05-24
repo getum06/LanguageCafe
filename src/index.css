@@ -1,0 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  font-family: 'Nunito', system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #FFF5F8;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #FFE8F0;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: #FFB7C5;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #FF8FAB;
+}
+
+/* Anime-style card */
+@layer components {
+  .anime-card {
+    @apply bg-white rounded-3xl shadow-lg border-2 border-pastel-pink transition-all duration-200;
+  }
+  .anime-card:hover {
+    @apply shadow-xl -translate-y-1;
+  }
+  .btn-primary {
+    @apply bg-pastel-pink text-cafe-brown font-bold py-3 px-6 rounded-2xl 
+           shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200
+           active:translate-y-0 active:shadow-md border-2 border-pink-300;
+  }
+  .btn-secondary {
+    @apply bg-pastel-purple text-purple-800 font-bold py-3 px-6 rounded-2xl 
+           shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200
+           active:translate-y-0 active:shadow-md border-2 border-purple-300;
+  }
+  .btn-mint {
+    @apply bg-pastel-mint text-green-800 font-bold py-3 px-6 rounded-2xl 
+           shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200
+           active:translate-y-0 active:shadow-md border-2 border-green-300;
+  }
+  .stat-badge {
+    @apply flex items-center gap-1.5 bg-white rounded-2xl px-3 py-1.5 shadow-sm 
+           border-2 border-pastel-pink font-bold text-sm;
+  }
+  .speech-bubble {
+    @apply relative bg-white rounded-3xl p-4 shadow-md border-2 border-pastel-purple;
+  }
+  .speech-bubble::after {
+    content: '';
+    @apply absolute -bottom-3 left-6 w-0 h-0;
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+    border-top: 12px solid white;
+  }
+  .speech-bubble::before {
+    content: '';
+    @apply absolute -bottom-4 left-5 w-0 h-0;
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-top: 14px solid #C9B1FF;
+  }
+}
+
+/* Star particles */
+.star-particle {
+  position: absolute;
+  animation: twinkle 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* XP bar animation */
+.xp-fill {
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover glow effect */
+.glow-pink:hover {
+  box-shadow: 0 0 20px rgba(255, 183, 197, 0.6);
+}
+.glow-purple:hover {
+  box-shadow: 0 0 20px rgba(201, 177, 255, 0.6);
+}
+.glow-mint:hover {
+  box-shadow: 0 0 20px rgba(181, 234, 215, 0.6);
+}
