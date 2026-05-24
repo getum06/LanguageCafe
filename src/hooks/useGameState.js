@@ -5,6 +5,7 @@ const DEFAULT_STATE = {
   hearts: 5,
   streak: 0,
   selectedCharacter: null,
+  selectedLanguage: null,
   completedLessons: [],
   completedQuizzes: [],
   lastPlayedDate: null,
@@ -76,6 +77,10 @@ export function useGameState() {
     setState(prev => ({ ...prev, selectedCharacter: characterId }));
   }
 
+  function selectLanguage(languageId) {
+    setState(prev => ({ ...prev, selectedLanguage: languageId }));
+  }
+
   function completeLesson(lessonId) {
     setState(prev => ({
       ...prev,
@@ -113,6 +118,7 @@ export function useGameState() {
     loseHeart,
     gainHeart,
     selectCharacter,
+    selectLanguage,
     completeLesson,
     completeQuiz,
     unlockArea,

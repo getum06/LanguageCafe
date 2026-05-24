@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { CHARACTERS } from '../data/characters';
+import { getLanguage } from '../data/languages';
 
 const FLOATING_ITEMS = ['☕', '🌸', '✨', '🍰', '⭐', '💕', '🧁', '🌙'];
 
@@ -11,8 +12,10 @@ function FloatingParticle({ emoji, style }) {
   );
 }
 
-export default function HomePage({ state, onNavigate, gainXP }) {
+export default function HomePage({ state, onNavigate }) {
   const character = state.selectedCharacter ? CHARACTERS[state.selectedCharacter] : null;
+  const language = state.selectedLanguage ? getLanguage(state.selectedLanguage) : null;
+
   const [particles] = useState(() =>
     FLOATING_ITEMS.map((emoji, i) => ({
       emoji,
@@ -20,7 +23,7 @@ export default function HomePage({ state, onNavigate, gainXP }) {
         left: `${8 + (i * 12) % 85}%`,
         top: `${10 + (i * 17) % 70}%`,
         animationDelay: `${i * 0.4}s`,
-        opacity: 0.4,
+        opacity: 0.35,
         fontSize: `${1 + (i % 3) * 0.4}rem`,
       },
     }))
@@ -37,28 +40,33 @@ export default function HomePage({ state, onNavigate, gainXP }) {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Hero Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-pink-200 via-purple-100 to-blue-200 p-6 border-2 border-pink-200 shadow-lg min-h-[180px]">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-pink-200 via-purple-100 to-blue-200 p-5 border-2 border-pink-200 shadow-lg min-h-[160px]">
         {particles.map((p, i) => (
           <FloatingParticle key={i} {...p} />
         ))}
-
         <div className="relative z-10">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="font-black text-3xl text-cafe-brown mb-1">
+              <h1 className="font-black text-2xl text-cafe-brown mb-1">
                 Lingo<span className="text-pink-500">Café</span> Quest ☕
               </h1>
-              <p className="text-purple-700 font-semibold text-sm">
-                Your cozy Japanese-style language adventure!
-              </p>
+              {language ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-2xl font-black text-sm
+                    ${language.badgeColor} border ${language.borderColor} bg-white/70`}>
+                    {language.flag} Learning {language.name}
+                  </span>
+                </div>
+              ) : (
+                <p className="text-purple-700 font-semibold text-sm">Your cozy language adventure!</p>
+              )}
             </div>
-            <div className="text-5xl animate-float">☕</div>
+            <div className="text-4xl animate-float">{language ? language.emoji : '☕'}</div>
           </div>
 
-          {/* Daily streak */}
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
             <div className="bg-white/70 backdrop-blur-sm rounded-2xl px-3 py-1.5 flex items-center gap-1.5 font-bold text-sm text-orange-600 shadow-sm">
               🔥 {state.streak} Day Streak
             </div>
@@ -72,21 +80,57 @@ export default function HomePage({ state, onNavigate, gainXP }) {
         </div>
       </div>
 
+      {/* Language CTA if not selected */}
+      {!language && (
+        <button
+          onClick={() => onNavigate('language-select')}
+          className="w-full anime-card p-4 border-dashed border-2 border-indigo-300 bg-indigo-50
+            hover:bg-indigo-100 transition-colors text-center group"
+        >
+          <div className="text-3xl mb-1 group-hover:scale-110 transition-transform">🌍</div>
+          <h3 className="font-black text-indigo-600 text-base">Choose a Language to Learn!</h3>
+          <p className="text-gray-500 text-xs mt-1">Spanish · French · Japanese · Korean · Italian</p>
+        </button>
+      )}
+
+      {/* Language quick-switch strip (if language selected) */}
+      {language && (
+        <div className={`rounded-2xl p-3 border-2 ${language.borderColor} ${language.bgColor} flex items-center justify-between`}>
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">{language.flag}</span>
+            <div>
+              <div className="font-black text-gray-800 text-sm">{language.name} — Beginner Café</div>
+              <div className="text-xs text-gray-500 font-medium">{language.funFact}</div>
+            </div>
+          </div>
+          <button
+            onClick={() => onNavigate('language-select')}
+            className={`text-xs font-black px-3 py-1.5 rounded-xl border ${language.borderColor} ${language.badgeColor} hover:opacity-80 transition-opacity flex-shrink-0`}
+          >
+            Change
+          </button>
+        </div>
+      )}
+
       {/* Character Greeting */}
       {character ? (
         <div className={`anime-card p-4 ${character.bgColor} border-2 ${character.borderColor}`}>
-          <div className="flex items-start gap-4">
-            <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${character.color} 
-              flex items-center justify-center text-4xl shadow-md border-2 ${character.borderColor} flex-shrink-0 animate-bounce-soft`}>
+          <div className="flex items-start gap-3">
+            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${character.color}
+              flex items-center justify-center text-3xl shadow-md border-2 ${character.borderColor}
+              flex-shrink-0 animate-bounce-soft`}>
               {character.emoji}
             </div>
             <div className="flex-1">
               <div className="speech-bubble">
-                <p className="font-bold text-gray-700">
-                  {greeting || character.catchphrase}
+                <p className="font-bold text-gray-700 text-sm">
+                  {language
+                    ? `${greeting || character.catchphrase} Let's learn ${language.name} today! ${language.flag}`
+                    : greeting || character.catchphrase
+                  }
                 </p>
               </div>
-              <p className="text-sm text-gray-500 mt-2 font-semibold">
+              <p className="text-xs text-gray-400 mt-1.5 font-semibold">
                 — {character.name} ({character.personality})
               </p>
             </div>
@@ -95,22 +139,22 @@ export default function HomePage({ state, onNavigate, gainXP }) {
       ) : (
         <button
           onClick={() => onNavigate('character-select')}
-          className="w-full anime-card p-5 border-dashed border-2 border-pink-300 bg-pink-50 
+          className="w-full anime-card p-4 border-dashed border-2 border-pink-300 bg-pink-50
             hover:bg-pink-100 transition-colors text-center group"
         >
-          <div className="text-4xl mb-2 group-hover:scale-110 transition-transform">🌸</div>
-          <h3 className="font-black text-pink-600 text-lg">Choose Your AI Buddy!</h3>
-          <p className="text-gray-500 text-sm mt-1">Pick Yumi, Kai, or Luna to guide your journey</p>
+          <div className="text-3xl mb-1 group-hover:scale-110 transition-transform">🌸</div>
+          <h3 className="font-black text-pink-600">Choose Your AI Buddy!</h3>
+          <p className="text-gray-500 text-xs mt-1">Pick Yumi, Kai, or Luna to guide your journey</p>
         </button>
       )}
 
       {/* XP Progress */}
       <div className="anime-card p-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="font-black text-gray-700">⭐ XP Progress</span>
-          <span className="text-sm font-bold text-gray-400">{state.xp} total XP</span>
+          <span className="font-black text-gray-700 text-sm">⭐ XP Progress</span>
+          <span className="text-xs font-bold text-gray-400">{state.xp} total XP</span>
         </div>
-        <div className="h-4 bg-gray-100 rounded-full overflow-hidden border border-gray-200">
+        <div className="h-3 bg-gray-100 rounded-full overflow-hidden border border-gray-200">
           <div
             className="h-full bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 rounded-full xp-fill"
             style={{ width: `${xpProgress}%` }}
@@ -125,78 +169,82 @@ export default function HomePage({ state, onNavigate, gainXP }) {
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-3">
         <button
-          onClick={() => onNavigate('lesson')}
-          className="anime-card p-5 bg-gradient-to-br from-pink-50 to-rose-50 
+          onClick={() => language ? onNavigate('lesson') : onNavigate('language-select')}
+          className="anime-card p-4 bg-gradient-to-br from-pink-50 to-rose-50
             hover:from-pink-100 hover:to-rose-100 transition-colors text-left group glow-pink"
         >
-          <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">📖</div>
-          <h3 className="font-black text-gray-800 text-base">Today's Lesson</h3>
-          <p className="text-xs text-gray-500 mt-1">Ordering at a Café ☕</p>
-          <div className="mt-2 text-xs font-bold text-pink-500">+50 XP →</div>
+          <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">📖</div>
+          <h3 className="font-black text-gray-800 text-sm">Today's Lesson</h3>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {language ? `${language.flag} Café ordering` : 'Pick a language!'}
+          </p>
+          <div className="mt-1.5 text-xs font-bold text-pink-500">+50 XP →</div>
         </button>
 
         <button
-          onClick={() => onNavigate('quiz')}
-          className="anime-card p-5 bg-gradient-to-br from-purple-50 to-violet-50 
+          onClick={() => language ? onNavigate('quiz') : onNavigate('language-select')}
+          className="anime-card p-4 bg-gradient-to-br from-purple-50 to-violet-50
             hover:from-purple-100 hover:to-violet-100 transition-colors text-left group glow-purple"
         >
-          <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">🎯</div>
-          <h3 className="font-black text-gray-800 text-base">Quick Quiz</h3>
-          <p className="text-xs text-gray-500 mt-1">Test your Spanish!</p>
-          <div className="mt-2 text-xs font-bold text-purple-500">+75 XP →</div>
+          <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">🎯</div>
+          <h3 className="font-black text-gray-800 text-sm">Quick Quiz</h3>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {language ? `Test your ${language.name}!` : 'Pick a language!'}
+          </p>
+          <div className="mt-1.5 text-xs font-bold text-purple-500">+75 XP →</div>
         </button>
 
         <button
-          onClick={() => onNavigate('chat')}
-          className="anime-card p-5 bg-gradient-to-br from-mint-50 to-green-50 
-            hover:from-green-100 hover:to-emerald-100 transition-colors text-left group glow-mint"
+          onClick={() => language ? onNavigate('chat') : onNavigate('language-select')}
+          className="anime-card p-4 hover:shadow-xl transition-all text-left group glow-mint"
           style={{ background: 'linear-gradient(135deg, #f0fdf4, #ecfdf5)' }}
         >
-          <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">💬</div>
-          <h3 className="font-black text-gray-800 text-base">Chat Practice</h3>
-          <p className="text-xs text-gray-500 mt-1">Talk with your buddy!</p>
-          <div className="mt-2 text-xs font-bold text-green-600">+30 XP →</div>
+          <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">💬</div>
+          <h3 className="font-black text-gray-800 text-sm">Chat Practice</h3>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {language ? `Chat with ${character?.name || 'your buddy'}!` : 'Pick a language!'}
+          </p>
+          <div className="mt-1.5 text-xs font-bold text-green-600">+30 XP →</div>
         </button>
 
         <button
           onClick={() => onNavigate('world-map')}
-          className="anime-card p-5 bg-gradient-to-br from-blue-50 to-cyan-50 
+          className="anime-card p-4 bg-gradient-to-br from-blue-50 to-cyan-50
             hover:from-blue-100 hover:to-cyan-100 transition-colors text-left group"
         >
-          <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">🗺️</div>
-          <h3 className="font-black text-gray-800 text-base">World Map</h3>
-          <p className="text-xs text-gray-500 mt-1">Explore new areas!</p>
-          <div className="mt-2 text-xs font-bold text-blue-500">4 worlds →</div>
+          <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">🗺️</div>
+          <h3 className="font-black text-gray-800 text-sm">World Map</h3>
+          <p className="text-xs text-gray-500 mt-0.5">Explore new areas!</p>
+          <div className="mt-1.5 text-xs font-bold text-blue-500">4 worlds →</div>
         </button>
       </div>
 
-      {/* Daily Progress */}
+      {/* Progress stats */}
       <div className="anime-card p-4">
-        <h3 className="font-black text-gray-700 mb-3">📅 Your Progress</h3>
-        <div className="grid grid-cols-3 gap-3 text-center">
+        <h3 className="font-black text-gray-700 mb-3 text-sm">📅 Your Progress</h3>
+        <div className="grid grid-cols-3 gap-2 text-center">
           <div className="bg-pink-50 rounded-2xl p-3 border border-pink-200">
-            <div className="text-2xl font-black text-pink-500">{state.completedLessons.length}</div>
-            <div className="text-xs font-bold text-gray-500 mt-1">Lessons Done</div>
+            <div className="text-xl font-black text-pink-500">{state.completedLessons.length}</div>
+            <div className="text-xs font-bold text-gray-500 mt-0.5">Lessons</div>
           </div>
           <div className="bg-purple-50 rounded-2xl p-3 border border-purple-200">
-            <div className="text-2xl font-black text-purple-500">{state.completedQuizzes.length}</div>
-            <div className="text-xs font-bold text-gray-500 mt-1">Quizzes Done</div>
+            <div className="text-xl font-black text-purple-500">{state.completedQuizzes.length}</div>
+            <div className="text-xs font-bold text-gray-500 mt-0.5">Quizzes</div>
           </div>
           <div className="bg-orange-50 rounded-2xl p-3 border border-orange-200">
-            <div className="text-2xl font-black text-orange-500">{state.xp}</div>
-            <div className="text-xs font-bold text-gray-500 mt-1">Total XP</div>
+            <div className="text-xl font-black text-orange-500">{state.xp}</div>
+            <div className="text-xs font-bold text-gray-500 mt-0.5">Total XP</div>
           </div>
         </div>
       </div>
 
-      {/* Fun facts */}
-      <div className="anime-card p-4 bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-200">
-        <h3 className="font-black text-amber-700 mb-2">✨ Did you know?</h3>
-        <p className="text-gray-600 text-sm font-medium">
-          Spanish is spoken by over <strong>500 million</strong> people worldwide! 
-          It's the 2nd most spoken language on Earth. ¡Increíble! 🌍
-        </p>
-      </div>
+      {/* Fun fact */}
+      {language && (
+        <div className="anime-card p-4 bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-200">
+          <h3 className="font-black text-amber-700 mb-1 text-sm">✨ {language.flag} Did you know?</h3>
+          <p className="text-gray-600 text-sm font-medium">{language.funFact}</p>
+        </div>
+      )}
     </div>
   );
 }

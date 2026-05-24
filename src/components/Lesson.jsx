@@ -1,28 +1,30 @@
 import { useState } from 'react';
-import { LESSON_CAFE } from '../data/lessonData';
+import { getLanguage } from '../data/languages';
 import { CHARACTERS } from '../data/characters';
 
+/* ── Vocab flip card ── */
 function VocabCard({ word }) {
   const [flipped, setFlipped] = useState(false);
   return (
     <button
       onClick={() => setFlipped(f => !f)}
-      className={`relative w-full aspect-[3/2] rounded-2xl border-2 shadow-md 
+      className={`relative w-full aspect-[3/2] rounded-2xl border-2 shadow-md
         transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5
         ${flipped ? 'bg-pastel-purple border-purple-300' : 'bg-white border-pink-200'}
       `}
     >
-      <div className="absolute inset-0 flex flex-col items-center justify-center p-3">
-        <span className="text-3xl mb-1">{word.emoji}</span>
+      <div className="absolute inset-0 flex flex-col items-center justify-center p-2 gap-1">
+        <span className="text-2xl">{word.emoji}</span>
         {flipped ? (
           <>
-            <span className="font-black text-purple-700 text-base">{word.english}</span>
-            <span className="text-xs text-purple-400 mt-1">tap to flip back</span>
+            <span className="font-black text-purple-700 text-sm text-center">{word.english}</span>
+            <span className="text-xs text-purple-400">tap to flip back</span>
           </>
         ) : (
           <>
-            <span className="font-black text-pink-600 text-base">{word.spanish}</span>
-            <span className="text-xs text-gray-400 mt-1">tap to see English</span>
+            <span className="font-black text-pink-600 text-sm text-center leading-tight">{word.word}</span>
+            <span className="text-xs text-gray-400 italic text-center">{word.pronunciation}</span>
+            <span className="text-xs text-gray-300">tap to translate</span>
           </>
         )}
       </div>
@@ -30,31 +32,38 @@ function VocabCard({ word }) {
   );
 }
 
-function SlideIntro({ slide }) {
+/* ── Slide components ── */
+function SlideIntro({ language }) {
   return (
-    <div className="text-center space-y-4 py-8">
-      <div className="text-6xl animate-float inline-block">☕</div>
-      <h2 className="font-black text-3xl text-cafe-brown">{slide.title}</h2>
-      <h3 className="font-bold text-xl text-pink-500">{slide.subtitle}</h3>
-      <p className="text-gray-600 font-medium text-lg max-w-md mx-auto leading-relaxed">
-        {slide.content}
+    <div className="text-center space-y-4 py-6">
+      <div className="text-6xl animate-float inline-block">{language.emoji}</div>
+      <div className="text-4xl">{language.flag}</div>
+      <h2 className="font-black text-3xl text-cafe-brown">
+        Welcome to {language.name}! {language.flag}
+      </h2>
+      <h3 className="font-bold text-xl text-pink-500">Ordering at a Café ☕</h3>
+      <p className="text-gray-600 font-medium max-w-sm mx-auto leading-relaxed">
+        Today you'll learn how to order a drink at a {language.name}-speaking café!
+        We'll cover 8 essential words and a real conversation. ✨
       </p>
-      <div className="flex justify-center gap-3 text-3xl animate-pulse-slow">
-        <span>🌸</span><span>🍵</span><span>✨</span>
+      <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-3 border border-purple-200 inline-block">
+        <p className="font-bold text-purple-600 text-sm">{language.funFact}</p>
       </div>
     </div>
   );
 }
 
-function SlideVocab({ slide }) {
+function SlideVocab({ language }) {
   return (
     <div className="space-y-4">
-      <h2 className="font-black text-2xl text-gray-800 text-center">{slide.title}</h2>
+      <h2 className="font-black text-xl text-gray-800 text-center">
+        {language.flag} 8 Essential Words
+      </h2>
       <p className="text-center text-gray-500 font-medium text-sm">
-        Tap each card to flip it and see the meaning! 🃏
+        Tap each card to see the English meaning! 🃏
       </p>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {slide.words.map((word, i) => (
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {language.vocab.map((word, i) => (
           <VocabCard key={i} word={word} />
         ))}
       </div>
@@ -62,31 +71,38 @@ function SlideVocab({ slide }) {
   );
 }
 
-function SlideDialogue({ slide }) {
+function SlideDialogue({ language }) {
   const [revealed, setRevealed] = useState(0);
+  const exchanges = language.dialogue;
 
   return (
     <div className="space-y-4">
-      <h2 className="font-black text-2xl text-gray-800 text-center">{slide.title}</h2>
+      <h2 className="font-black text-xl text-gray-800 text-center">
+        {language.flag} Café Conversation
+      </h2>
       <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-3 border border-amber-200 text-center">
-        <p className="font-bold text-amber-700">{slide.scene}</p>
+        <p className="font-bold text-amber-700 text-sm">☕ Inside a {language.name}-speaking café…</p>
       </div>
 
       <div className="space-y-3">
-        {slide.exchanges.map((ex, i) => (
+        {exchanges.map((ex, i) => (
           <div
             key={i}
-            className={`transition-all duration-500 ${i <= revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+            className={`transition-all duration-500
+              ${i <= revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
           >
             <div className={`flex items-start gap-3 ${ex.speaker === 'You' ? 'flex-row-reverse' : ''}`}>
-              <div className={`w-10 h-10 rounded-xl ${ex.color} flex items-center justify-center text-xl flex-shrink-0 shadow-sm border`}>
-                {ex.emoji}
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0 shadow-sm border
+                ${ex.speaker === 'You' ? 'bg-pastel-pink border-pink-200' : 'bg-pastel-mint border-green-200'}`}>
+                {ex.speaker === 'You' ? '🧑' : '👨‍🍳'}
               </div>
               <div className={`flex-1 ${ex.speaker === 'You' ? 'text-right' : ''}`}>
                 <span className="text-xs font-black text-gray-400 block mb-1">{ex.speaker}</span>
                 <div className={`inline-block rounded-2xl px-4 py-2.5 shadow-sm border
-                  ${ex.speaker === 'You' ? 'bg-pastel-pink border-pink-200' : 'bg-pastel-mint border-green-200'}`}>
-                  <p className="font-black text-gray-800 text-base">{ex.line}</p>
+                  ${ex.speaker === 'You'
+                    ? 'bg-pastel-pink border-pink-200'
+                    : 'bg-pastel-mint border-green-200'}`}>
+                  <p className="font-black text-gray-800 text-sm">{ex.line}</p>
                   <p className="text-gray-500 text-xs font-medium mt-0.5 italic">{ex.translation}</p>
                 </div>
               </div>
@@ -95,34 +111,35 @@ function SlideDialogue({ slide }) {
         ))}
       </div>
 
-      {revealed < slide.exchanges.length - 1 && (
+      {revealed < exchanges.length - 1 ? (
         <button
           onClick={() => setRevealed(r => r + 1)}
           className="w-full btn-primary"
         >
           Next line →
         </button>
-      )}
-      {revealed === slide.exchanges.length - 1 && (
+      ) : (
         <div className="text-center bg-green-50 rounded-2xl p-3 border border-green-200">
-          <p className="font-bold text-green-600">✅ Full conversation shown! Great job reading!</p>
+          <p className="font-bold text-green-600 text-sm">✅ Full conversation! Great reading!</p>
         </div>
       )}
     </div>
   );
 }
 
-function SlideTip({ slide }) {
+function SlideTips({ language }) {
   return (
     <div className="space-y-4">
-      <h2 className="font-black text-2xl text-gray-800 text-center">{slide.title}</h2>
+      <h2 className="font-black text-xl text-gray-800 text-center">
+        {language.flag} Pro Tips!
+      </h2>
       <div className="space-y-3">
-        {slide.tips.map((tip, i) => (
+        {language.tips.map((tip, i) => (
           <div key={i} className="anime-card p-4 bg-gradient-to-br from-yellow-50 to-amber-50 border-amber-200">
             <div className="flex items-start gap-3">
               <span className="text-3xl flex-shrink-0">{tip.icon}</span>
               <div>
-                <h4 className="font-black text-amber-700 mb-1">{tip.title}</h4>
+                <h4 className="font-black text-amber-700 mb-1 text-sm">{tip.title}</h4>
                 <p className="text-gray-600 font-medium text-sm">{tip.body}</p>
               </div>
             </div>
@@ -133,72 +150,75 @@ function SlideTip({ slide }) {
   );
 }
 
-function SlideSummary({ slide, onComplete }) {
+function SlideSummary({ language, onComplete }) {
+  const keyPhrases = [
+    `Greet someone: "${language.vocab.find(v => v.key === 'hello')?.word}"`,
+    `Order a drink: "${language.vocab.find(v => v.key === 'iWant')?.word} + drink + ${language.vocab.find(v => v.key === 'please')?.word}"`,
+    `Say thank you: "${language.vocab.find(v => v.key === 'thankYou')?.word}"`,
+    `Say goodbye: "${language.vocab.find(v => v.key === 'goodbye')?.word}"`,
+  ];
+
   return (
-    <div className="text-center space-y-5 py-4">
-      <div className="text-6xl animate-bounce-soft inline-block">🎉</div>
-      <h2 className="font-black text-3xl text-cafe-brown">{slide.title}</h2>
-      <p className="text-gray-600 font-medium">{slide.content}</p>
+    <div className="text-center space-y-4 py-4">
+      <div className="text-5xl animate-bounce-soft inline-block">🎉</div>
+      <h2 className="font-black text-2xl text-cafe-brown">Lesson Complete!</h2>
+      <p className="text-gray-600 font-medium text-sm">
+        You learned 8 essential {language.name} words and a full café conversation! {language.flag}
+      </p>
 
       <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-4 border border-green-200 text-left">
-        <h4 className="font-black text-green-700 mb-3">✅ You learned how to:</h4>
+        <h4 className="font-black text-green-700 mb-2 text-sm">✅ You can now:</h4>
         <ul className="space-y-2">
-          {slide.learned.map((item, i) => (
+          {keyPhrases.map((phrase, i) => (
             <li key={i} className="flex items-start gap-2 text-gray-700 font-medium text-sm">
-              <span className="text-green-500 text-lg flex-shrink-0">🌸</span>
-              {item}
+              <span className="text-green-500 flex-shrink-0">🌸</span>
+              {phrase}
             </li>
           ))}
         </ul>
       </div>
 
       <div className="bg-yellow-50 rounded-2xl p-3 border border-yellow-200">
-        <p className="font-black text-yellow-600 text-lg">+50 XP earned! ⭐</p>
-        <p className="text-gray-500 text-sm">Try the quiz to earn 75 more XP!</p>
+        <p className="font-black text-yellow-600">+50 XP earned! ⭐</p>
+        <p className="text-gray-500 text-xs mt-0.5">Take the quiz to earn 75 more XP!</p>
       </div>
 
-      <button
-        onClick={onComplete}
-        className="btn-primary w-full text-lg py-4"
-      >
+      <button onClick={onComplete} className="btn-primary w-full py-4 text-base">
         🎯 Take the Quiz! →
       </button>
     </div>
   );
 }
 
+/* ── Main Lesson component ── */
 export default function Lesson({ state, onNavigate, completeLesson, gainXP }) {
-  const lesson = LESSON_CAFE;
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [completed, setCompleted] = useState(state.completedLessons.includes(lesson.id));
+  const language = getLanguage(state.selectedLanguage);
+  const lessonId = `cafe-ordering-${language.id}`;
   const character = state.selectedCharacter ? CHARACTERS[state.selectedCharacter] : null;
-  const slide = lesson.slides[currentSlide];
-  const progress = ((currentSlide + 1) / lesson.slides.length) * 100;
+
+  const SLIDES = ['intro', 'vocab', 'dialogue', 'tips', 'summary'];
+  const [slideIdx, setSlideIdx] = useState(0);
+  const [completed, setCompleted] = useState(state.completedLessons.includes(lessonId));
+  const slide = SLIDES[slideIdx];
+  const progress = ((slideIdx + 1) / SLIDES.length) * 100;
 
   function handleNext() {
-    if (currentSlide < lesson.slides.length - 1) {
-      setCurrentSlide(s => s + 1);
-    }
+    if (slideIdx < SLIDES.length - 1) setSlideIdx(s => s + 1);
   }
-
   function handlePrev() {
-    if (currentSlide > 0) {
-      setCurrentSlide(s => s - 1);
-    }
+    if (slideIdx > 0) setSlideIdx(s => s - 1);
   }
-
   function handleComplete() {
     if (!completed) {
-      completeLesson(lesson.id);
-      gainXP(lesson.xpReward);
+      completeLesson(lessonId);
+      gainXP(50);
       setCompleted(true);
     }
     onNavigate('quiz');
   }
 
-  const isDialogue = slide.type === 'dialogue';
-  const isSummary = slide.type === 'summary';
-  const isLast = currentSlide === lesson.slides.length - 1;
+  const isSummary = slide === 'summary';
+  const isDialogue = slide === 'dialogue';
 
   return (
     <div className="space-y-4">
@@ -206,17 +226,24 @@ export default function Lesson({ state, onNavigate, completeLesson, gainXP }) {
       <div className="flex items-center gap-3">
         <button
           onClick={() => onNavigate('home')}
-          className="w-10 h-10 rounded-xl bg-pink-100 border border-pink-200 flex items-center 
+          className="w-10 h-10 rounded-xl bg-pink-100 border border-pink-200 flex items-center
             justify-center text-xl hover:bg-pink-200 transition-colors"
         >
           ←
         </button>
         <div className="flex-1">
-          <h1 className="font-black text-xl text-cafe-brown">{lesson.title}</h1>
-          <p className="text-xs text-gray-400 font-bold">Slide {currentSlide + 1} of {lesson.slides.length}</p>
+          <div className="flex items-center gap-2">
+            <span className="text-lg">{language.flag}</span>
+            <h1 className="font-black text-lg text-cafe-brown leading-tight">
+              {language.name} — Café Ordering
+            </h1>
+          </div>
+          <p className="text-xs text-gray-400 font-bold">
+            Slide {slideIdx + 1} of {SLIDES.length}
+          </p>
         </div>
-        <div className="text-sm font-bold text-yellow-600 bg-yellow-50 px-3 py-1 rounded-xl border border-yellow-200">
-          +{lesson.xpReward} XP
+        <div className="text-sm font-bold text-yellow-600 bg-yellow-50 px-2 py-1 rounded-xl border border-yellow-200 flex-shrink-0">
+          +50 XP
         </div>
       </div>
 
@@ -228,27 +255,25 @@ export default function Lesson({ state, onNavigate, completeLesson, gainXP }) {
         />
       </div>
 
-      {/* Character comment */}
-      {character && currentSlide === 0 && (
+      {/* Character comment on intro */}
+      {character && slideIdx === 0 && (
         <div className={`flex items-start gap-3 p-3 rounded-2xl ${character.bgColor} border ${character.borderColor}`}>
           <span className="text-3xl flex-shrink-0">{character.emoji}</span>
-          <div>
-            <p className="font-bold text-sm text-gray-700">
-              {character.id === 'yumi' && "Yay! Let's learn Spanish together! I'll be right here cheering for you! 🌸"}
-              {character.id === 'kai' && "Alright, new quest! This lesson is worth major XP, let's GOOOO! 🎮"}
-              {character.id === 'luna' && "Begin your journey with patience. Each word learned is a spell mastered. 🌙"}
-            </p>
-          </div>
+          <p className="font-bold text-sm text-gray-700">
+            {character.id === 'yumi' && `Yay! ${language.flag} ${language.name} time! Let's learn together! 🌸`}
+            {character.id === 'kai' && `New quest unlocked: ${language.name} Café Run! Let's gooo! 🎮`}
+            {character.id === 'luna' && `Every word is a spell. Let us begin your ${language.name} journey… 🌙`}
+          </p>
         </div>
       )}
 
       {/* Slide content */}
-      <div className="anime-card p-6 min-h-[300px]">
-        {slide.type === 'intro' && <SlideIntro slide={slide} />}
-        {slide.type === 'vocab' && <SlideVocab slide={slide} />}
-        {slide.type === 'dialogue' && <SlideDialogue slide={slide} />}
-        {slide.type === 'tip' && <SlideTip slide={slide} />}
-        {slide.type === 'summary' && <SlideSummary slide={slide} onComplete={handleComplete} />}
+      <div className="anime-card p-5 min-h-[300px]">
+        {slide === 'intro'    && <SlideIntro    language={language} />}
+        {slide === 'vocab'    && <SlideVocab    language={language} />}
+        {slide === 'dialogue' && <SlideDialogue language={language} />}
+        {slide === 'tips'     && <SlideTips     language={language} />}
+        {slide === 'summary'  && <SlideSummary  language={language} onComplete={handleComplete} />}
       </div>
 
       {/* Navigation */}
@@ -256,7 +281,7 @@ export default function Lesson({ state, onNavigate, completeLesson, gainXP }) {
         <div className="flex gap-3">
           <button
             onClick={handlePrev}
-            disabled={currentSlide === 0}
+            disabled={slideIdx === 0}
             className="flex-1 py-3 rounded-2xl border-2 border-gray-200 font-bold text-gray-500
               hover:border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
@@ -264,10 +289,10 @@ export default function Lesson({ state, onNavigate, completeLesson, gainXP }) {
           </button>
           {!isDialogue && (
             <button
-              onClick={isLast ? handleComplete : handleNext}
+              onClick={handleNext}
               className="flex-1 btn-primary"
             >
-              {isLast ? '🎉 Complete!' : 'Next →'}
+              Next →
             </button>
           )}
         </div>
@@ -275,12 +300,12 @@ export default function Lesson({ state, onNavigate, completeLesson, gainXP }) {
 
       {/* Slide dots */}
       <div className="flex justify-center gap-2">
-        {lesson.slides.map((_, i) => (
+        {SLIDES.map((_, i) => (
           <button
             key={i}
-            onClick={() => setCurrentSlide(i)}
-            className={`w-2.5 h-2.5 rounded-full transition-all duration-200
-              ${i === currentSlide ? 'bg-pink-400 w-6' : i < currentSlide ? 'bg-purple-300' : 'bg-gray-200'}`}
+            onClick={() => setSlideIdx(i)}
+            className={`h-2.5 rounded-full transition-all duration-200
+              ${i === slideIdx ? 'bg-pink-400 w-6' : i < slideIdx ? 'bg-purple-300 w-2.5' : 'bg-gray-200 w-2.5'}`}
           />
         ))}
       </div>
