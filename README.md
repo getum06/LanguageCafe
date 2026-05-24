@@ -1,16 +1,36 @@
-# React + Vite
+# Lingo Café Quest ☕
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A cute anime-style language learning website built with React, Vite, and Tailwind CSS.
 
-Currently, two official plugins are available:
+## Getting Started
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Scripts
 
-## Expanding the ESLint configuration
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server (port 5173) |
+| `npm run build` | Create production build |
+| `npm run preview` | Preview production build |
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Features
+
+- 🏠 Cozy café homepage with XP, hearts, and streak tracker
+- 👥 3 AI buddies: Yumi (cheerful), Kai (gamer), Luna (magical cat)
+- 🗺️ World map with 4 unlockable areas
+- 📖 Beginner Spanish lesson — ordering at a café
+- 🎯 Multiple-choice quiz with character feedback
+- 💬 Chat practice with keyword-matched AI responses
+- 💾 All progress saved in localStorage (no backend needed)
+
+## Tech Stack
+
+- [React 18](https://react.dev) + [Vite](https://vitejs.dev)
+- [Tailwind CSS 3](https://tailwindcss.com)
+- [Nunito](https://fonts.google.com/specimen/Nunito) font
