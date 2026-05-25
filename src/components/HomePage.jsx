@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CHARACTERS } from '../data/characters';
 import { getLanguage } from '../data/languages';
 import { getReviewRecommendations } from '../data/skillReview';
+import { getDueReviewWords } from '../data/spacedRepetition';
 import { SKILL_EMOJI } from '../data/skillTracking';
 import LanguageSwitcher from './LanguageSwitcher';
 
@@ -45,6 +46,10 @@ export default function HomePage({ state, onNavigate, selectLanguage }) {
   const review = language
     ? getReviewRecommendations(state.skillTracking, state.selectedLanguage)
     : { weakSkills: [], words: [], hasReview: false, recommendations: [] };
+
+  const dueWords = language
+    ? getDueReviewWords(state.vocabMastery, state.selectedLanguage)
+    : [];
 
   return (
     <div className="space-y-5">
@@ -158,6 +163,41 @@ export default function HomePage({ state, onNavigate, selectLanguage }) {
           <h3 className="font-black text-pink-600">Choose Your AI Buddy!</h3>
           <p className="text-gray-500 text-xs mt-1">Pick Yumi, Kai, or Luna to guide your journey</p>
         </button>
+      )}
+
+      {/* Words to Review Today — spaced repetition */}
+      {language && dueWords.length > 0 && (
+        <div className="anime-card p-4 border-2 border-violet-300 bg-gradient-to-br from-violet-50 to-purple-50">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-2xl">📅</span>
+            <h3 className="font-black text-violet-900 text-sm">Words to Review Today</h3>
+          </div>
+          <p className="text-sm font-bold text-violet-700 mb-3">
+            {dueWords.length} word{dueWords.length === 1 ? '' : 's'} ready for spaced review
+          </p>
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {dueWords.slice(0, 6).map(entry => (
+              <span
+                key={`${entry.lessonId}:${entry.wordKey}`}
+                className="text-xs font-bold px-2 py-1 rounded-lg bg-white/80 border border-violet-200 text-gray-700"
+              >
+                {entry.vocab?.emoji} {entry.vocab?.word ?? entry.wordKey}
+              </span>
+            ))}
+            {dueWords.length > 6 && (
+              <span className="text-xs font-bold text-violet-500 self-center">
+                +{dueWords.length - 6} more
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate('review-practice')}
+            className="btn-primary w-full py-3"
+          >
+            🃏 Start Review ({dueWords.length})
+          </button>
+        </div>
       )}
 
       {/* Skill review recommendations */}

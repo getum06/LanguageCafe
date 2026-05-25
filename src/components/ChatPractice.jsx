@@ -140,9 +140,9 @@ export default function ChatPractice({ state, onNavigate, gainXP, recordSessionX
       const { skill, wordKey } = getChatPromptSkillMeta(prompt);
 
       if (isCorrect) {
-        recordSkillAttempt?.(skill, true, wordKey);
+        recordSkillAttempt?.(skill, true, wordKey, lessonKey);
       } else if (isPartial || result === 'empty') {
-        recordSkillAttempt?.(skill, false, wordKey);
+        recordSkillAttempt?.(skill, false, wordKey, lessonKey);
       }
 
       const langFeedback = buildFeedback(language.id, language.name, lessonKey, prompt.type, result);
