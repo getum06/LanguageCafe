@@ -1,3 +1,7 @@
+import { SUPPORTED_LANGUAGE_IDS } from '../lib/languageStorage';
+
+export { SUPPORTED_LANGUAGE_IDS };
+
 export const LANGUAGES = {
   spanish: {
     id: 'spanish',

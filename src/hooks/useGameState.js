@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getStoredLanguage, setStoredLanguage } from '../lib/languageStorage';
 
 const DEFAULT_STATE = {
   xp: 0,
@@ -15,9 +16,14 @@ const DEFAULT_STATE = {
 function loadFromStorage() {
   try {
     const saved = localStorage.getItem('lingoCafeQuest');
+    const storedLanguage = getStoredLanguage();
+
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Check streak continuity
+      // Dedicated language key takes precedence for consistency
+      if (storedLanguage) {
+        parsed.selectedLanguage = storedLanguage;
+      }
       const today = new Date().toDateString();
       const last = parsed.lastPlayedDate;
       if (last && last !== today) {
@@ -29,6 +35,10 @@ function loadFromStorage() {
       }
       return { ...DEFAULT_STATE, ...parsed };
     }
+
+    if (storedLanguage) {
+      return { ...DEFAULT_STATE, selectedLanguage: storedLanguage };
+    }
   } catch {
     // ignore
   }
@@ -38,6 +48,7 @@ function loadFromStorage() {
 function saveToStorage(state) {
   try {
     localStorage.setItem('lingoCafeQuest', JSON.stringify(state));
+    setStoredLanguage(state.selectedLanguage);
   } catch {
     // ignore
   }
@@ -78,6 +89,7 @@ export function useGameState() {
   }
 
   function selectLanguage(languageId) {
+    setStoredLanguage(languageId);
     setState(prev => ({ ...prev, selectedLanguage: languageId }));
   }
 
@@ -109,6 +121,7 @@ export function useGameState() {
   }
 
   function resetProgress() {
+    setStoredLanguage(null);
     setState(DEFAULT_STATE);
   }
 
