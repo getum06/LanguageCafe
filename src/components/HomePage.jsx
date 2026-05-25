@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { CHARACTERS } from '../data/characters';
 import { getLanguage } from '../data/languages';
+import { getReviewRecommendations } from '../data/skillReview';
+import { SKILL_EMOJI } from '../data/skillTracking';
 import LanguageSwitcher from './LanguageSwitcher';
 
 const FLOATING_ITEMS = ['☕', '🌸', '✨', '🍰', '⭐', '💕', '🧁', '🌙'];
@@ -39,6 +41,10 @@ export default function HomePage({ state, onNavigate, selectLanguage }) {
     const greets = CHARACTERS[state.selectedCharacter]?.greetings || [];
     return greets[Math.floor(Math.random() * greets.length)];
   });
+
+  const review = language
+    ? getReviewRecommendations(state.skillTracking, state.selectedLanguage)
+    : { weakSkills: [], words: [], hasReview: false, recommendations: [] };
 
   return (
     <div className="space-y-5">
@@ -151,6 +157,59 @@ export default function HomePage({ state, onNavigate, selectLanguage }) {
           <div className="text-3xl mb-1 group-hover:scale-110 transition-transform">🌸</div>
           <h3 className="font-black text-pink-600">Choose Your AI Buddy!</h3>
           <p className="text-gray-500 text-xs mt-1">Pick Yumi, Kai, or Luna to guide your journey</p>
+        </button>
+      )}
+
+      {/* Skill review recommendations */}
+      {language && review.weakSkills.length > 0 && (
+        <div className="anime-card p-4 border-2 border-orange-300 bg-gradient-to-br from-orange-50 to-amber-50">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-2xl">🎯</span>
+            <h3 className="font-black text-orange-800 text-sm">Review recommended</h3>
+          </div>
+          <div className="space-y-2 mb-4">
+            {review.weakSkills.map(skill => (
+              <div
+                key={skill.id}
+                className="flex items-center justify-between gap-2 bg-white/70 rounded-xl px-3 py-2 border border-orange-200"
+              >
+                <span className="text-sm font-bold text-gray-700">
+                  {SKILL_EMOJI[skill.id]} {skill.label}
+                </span>
+                <span className="text-xs font-black text-orange-600">
+                  {skill.accuracy}% · Review recommended
+                </span>
+              </div>
+            ))}
+          </div>
+          {review.words.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onNavigate('review-practice')}
+              className="btn-primary w-full py-3"
+            >
+              🃏 Review Practice ({review.words.length} word{review.words.length === 1 ? '' : 's'})
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Review practice when missed words exist but no weak skill banner yet */}
+      {language && review.weakSkills.length === 0 && review.words.length > 0 && (
+        <button
+          type="button"
+          onClick={() => onNavigate('review-practice')}
+          className="w-full anime-card p-4 border-2 border-amber-200 bg-amber-50 text-left hover:shadow-lg transition-shadow"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">🃏</span>
+            <div>
+              <h3 className="font-black text-amber-800 text-sm">Review Practice</h3>
+              <p className="text-xs text-gray-500 font-medium">
+                {review.words.length} missed vocabulary card{review.words.length === 1 ? '' : 's'} to review
+              </p>
+            </div>
+          </div>
         </button>
       )}
 

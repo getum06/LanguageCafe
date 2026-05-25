@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { getChatPromptSkillMeta } from '../data/skillReview';
 import { getLanguagePack, getVocabByKey, resolveLessonKey } from '../data/lessonContent';
 import { getWorld } from '../data/worlds';
 import { CHARACTERS } from '../data/characters';
@@ -79,7 +80,7 @@ function CharacterFeedback({ character, isCorrect }) {
   return isCorrect ? getMsg(character.correct) : getMsg(character.wrong);
 }
 
-export default function ChatPractice({ state, onNavigate, gainXP, recordSessionXp }) {
+export default function ChatPractice({ state, onNavigate, gainXP, recordSessionXp, recordSkillAttempt }) {
   const lessonKey = resolveLessonKey(state);
   const pack = getLanguagePack(state.selectedLanguage, lessonKey);
   const { meta: language, lesson, chat } = pack;
@@ -135,6 +136,15 @@ export default function ChatPractice({ state, onNavigate, gainXP, recordSessionX
 
     setTimeout(() => {
       const isCorrect = result === 'correct';
+      const isPartial = result === 'partial';
+      const { skill, wordKey } = getChatPromptSkillMeta(prompt);
+
+      if (isCorrect) {
+        recordSkillAttempt?.(skill, true, wordKey);
+      } else if (isPartial || result === 'empty') {
+        recordSkillAttempt?.(skill, false, wordKey);
+      }
+
       const langFeedback = buildFeedback(language.id, language.name, lessonKey, prompt.type, result);
       const charMsg = isCorrect
         ? (character ? CharacterFeedback({ character, isCorrect: true }) : null)
