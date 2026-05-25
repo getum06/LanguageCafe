@@ -1,6 +1,7 @@
 import { getWorld } from '../data/worlds';
 import { getLanguagePack, resolveLessonKey } from '../data/lessonContent';
 import { CHARACTERS } from '../data/characters';
+import { getCompanionFeedback } from '../data/companionFeedback';
 
 export default function RewardsSummary({ state, onNavigate, clearSessionRewards }) {
   const session = state.sessionRewards;
@@ -55,7 +56,16 @@ export default function RewardsSummary({ state, onNavigate, clearSessionRewards 
           {character && (
             <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl ${character.bgColor} border ${character.borderColor}`}>
               <span className="text-2xl">{character.emoji}</span>
-              <p className="font-bold text-sm text-gray-700">{character.name} is proud of you!</p>
+              <p className="font-bold text-sm text-gray-700">
+                {getCompanionFeedback(character.id, 'lessonComplete', {
+                  languageName: language.name,
+                  languageFlag: language.flag,
+                  lessonTitle: lesson.title,
+                  xpEarned: totalXp,
+                  streak: state.streak,
+                  level: Math.floor(state.xp / 100) + 1,
+                })}
+              </p>
             </div>
           )}
         </div>

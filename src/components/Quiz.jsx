@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { getLanguagePack, resolveLessonKey } from '../data/lessonContent';
 import { CHARACTERS } from '../data/characters';
-
-function getRandMsg(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
+import { getCompanionFeedback } from '../data/companionFeedback';
 
 const CONFETTI_COLORS = ['#FFB7C5', '#C9B1FF', '#B5EAD7', '#FFEAA7', '#A8D8EA', '#FFCBA4'];
 
@@ -47,13 +44,27 @@ export default function Quiz({ state, onNavigate, gainXP, loseHeart, completeQui
     setSelected(idx);
     setAnswered(true);
     const isCorrect = idx === question.correct;
+    const feedbackContext = {
+      languageName: language.name,
+      languageFlag: language.flag,
+      lessonTitle: lesson.title,
+    };
+
     if (isCorrect) {
       setScore(s => s + 1);
-      setFeedbackMsg(character ? getRandMsg(character.correct) : '¡Correcto! 🎉');
+      setFeedbackMsg(
+        character
+          ? getCompanionFeedback(character.id, 'correctAnswer', feedbackContext)
+          : '¡Correcto! 🎉',
+      );
     } else {
       loseHeart();
       setWrongCount(w => w + 1);
-      setFeedbackMsg(character ? getRandMsg(character.wrong) : 'Not quite! Try to remember this one.');
+      setFeedbackMsg(
+        character
+          ? getCompanionFeedback(character.id, 'wrongAnswer', feedbackContext)
+          : 'Not quite! Try to remember this one.',
+      );
     }
   }
 
@@ -104,10 +115,15 @@ export default function Quiz({ state, onNavigate, gainXP, loseHeart, completeQui
             {character && (
               <div className={`p-3 rounded-2xl ${character.bgColor} border ${character.borderColor}`}>
                 <p className="font-bold text-gray-700 text-sm">
-                  {percentage >= 80
-                    ? getRandMsg(character.correct)
-                    : getRandMsg(character.encouragement)
-                  }
+                  {getCompanionFeedback(character.id, 'quizComplete', {
+                    languageName: language.name,
+                    languageFlag: language.flag,
+                    lessonTitle: lesson.title,
+                    score: finalScore,
+                    totalQuestions: questions.length,
+                    percentage,
+                    xpEarned,
+                  })}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">— {character.name} {character.emoji}</p>
               </div>

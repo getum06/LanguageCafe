@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CHARACTERS } from '../data/characters';
 import { getLanguage } from '../data/languages';
+import { getCompanionFeedback } from '../data/companionFeedback';
 import LanguageSwitcher from './LanguageSwitcher';
 
 const FLOATING_ITEMS = ['☕', '🌸', '✨', '🍰', '⭐', '💕', '🧁', '🌙'];
@@ -40,6 +41,35 @@ export default function HomePage({ state, onNavigate, selectLanguage }) {
     return greets[Math.floor(Math.random() * greets.length)];
   });
 
+  const companionId = state.selectedCharacter;
+  const feedbackContext = {
+    languageName: language?.name,
+    languageFlag: language?.flag,
+    streak: state.streak,
+    level,
+    dueWordCount: Math.max(0, state.completedLessons.length - state.completedQuizzes.length),
+  };
+
+  const [streakFeedback] = useState(() =>
+    companionId && state.streak > 0
+      ? getCompanionFeedback(companionId, 'streakContinue', feedbackContext)
+      : null,
+  );
+
+  const recentlyLeveledUp = state.xp > 0 && state.xp % xpToNext < 8;
+  const [levelUpFeedback] = useState(() =>
+    companionId && recentlyLeveledUp
+      ? getCompanionFeedback(companionId, 'levelUp', feedbackContext)
+      : null,
+  );
+
+  const needsReview = feedbackContext.dueWordCount > 0;
+  const [reviewFeedback] = useState(() =>
+    companionId && needsReview
+      ? getCompanionFeedback(companionId, 'reviewNeeded', feedbackContext)
+      : null,
+  );
+
   return (
     <div className="space-y-5">
       {/* Hero Banner */}
@@ -78,6 +108,17 @@ export default function HomePage({ state, onNavigate, selectLanguage }) {
               {Array(state.hearts).fill('❤️').join('')}{Array(5 - state.hearts).fill('🖤').join('')}
             </div>
           </div>
+
+          {character && streakFeedback && state.streak > 0 && (
+            <p className="mt-3 text-sm font-bold text-purple-800 bg-white/60 rounded-2xl px-3 py-2">
+              {character.emoji} {streakFeedback}
+            </p>
+          )}
+          {character && levelUpFeedback && recentlyLeveledUp && (
+            <p className="mt-2 text-sm font-bold text-yellow-800 bg-white/60 rounded-2xl px-3 py-2">
+              {character.emoji} {levelUpFeedback}
+            </p>
+          )}
         </div>
       </div>
 
@@ -152,6 +193,25 @@ export default function HomePage({ state, onNavigate, selectLanguage }) {
           <h3 className="font-black text-pink-600">Choose Your AI Buddy!</h3>
           <p className="text-gray-500 text-xs mt-1">Pick Yumi, Kai, or Luna to guide your journey</p>
         </button>
+      )}
+
+      {/* Companion review reminder */}
+      {character && reviewFeedback && needsReview && (
+        <div className={`anime-card p-4 ${character.bgColor} border-2 ${character.borderColor}`}>
+          <div className="flex items-start gap-3">
+            <span className="text-3xl flex-shrink-0">{character.emoji}</span>
+            <div>
+              <p className="font-bold text-gray-700 text-sm">{reviewFeedback}</p>
+              <button
+                type="button"
+                onClick={() => onNavigate('world-map')}
+                className="mt-2 text-xs font-black text-purple-600 hover:underline"
+              >
+                Pick a lesson to review →
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* XP Progress */}
