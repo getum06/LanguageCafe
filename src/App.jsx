@@ -5,9 +5,11 @@ import HomePage from './components/HomePage';
 import LanguageSelect from './components/LanguageSelect';
 import CharacterSelect from './components/CharacterSelect';
 import WorldMap from './components/WorldMap';
+import LessonSelect from './components/LessonSelect';
 import Lesson from './components/Lesson';
 import Quiz from './components/Quiz';
 import ChatPractice from './components/ChatPractice';
+import RewardsSummary from './components/RewardsSummary';
 
 function getInitialPage(state) {
   if (!state.selectedLanguage) return 'language-select';
@@ -15,16 +17,23 @@ function getInitialPage(state) {
   return 'home';
 }
 
+const LESSON_FLOW_PAGES = ['lesson', 'quiz', 'chat', 'rewards-summary'];
+
 export default function App() {
   const game = useGameState();
   const [page, setPage] = useState(() => getInitialPage(game.state));
 
-  // If language gets cleared externally, redirect back to language select
   useEffect(() => {
     if (!game.state.selectedLanguage && page !== 'language-select') {
       setPage('language-select');
     }
-  }, [game.state.selectedLanguage]);
+  }, [game.state.selectedLanguage, page]);
+
+  useEffect(() => {
+    if (LESSON_FLOW_PAGES.includes(page) && !game.state.selectedLesson) {
+      setPage(game.state.selectedWorld ? 'lesson-select' : 'world-map');
+    }
+  }, [page, game.state.selectedLesson, game.state.selectedWorld]);
 
   function navigate(destination) {
     setPage(destination);
@@ -63,12 +72,25 @@ export default function App() {
           />
         );
       case 'world-map':
-        return <WorldMap {...sharedProps} />;
+        return (
+          <WorldMap
+            {...sharedProps}
+            selectWorld={game.selectWorld}
+          />
+        );
+      case 'lesson-select':
+        return (
+          <LessonSelect
+            {...sharedProps}
+            startLessonFlow={game.startLessonFlow}
+          />
+        );
       case 'lesson':
         return (
           <Lesson
             {...sharedProps}
             completeLesson={game.completeLesson}
+            recordSessionXp={game.recordSessionXp}
           />
         );
       case 'quiz':
@@ -76,16 +98,28 @@ export default function App() {
           <Quiz
             {...sharedProps}
             completeQuiz={game.completeQuiz}
+            recordSessionXp={game.recordSessionXp}
           />
         );
       case 'chat':
-        return <ChatPractice {...sharedProps} />;
+        return (
+          <ChatPractice
+            {...sharedProps}
+            recordSessionXp={game.recordSessionXp}
+          />
+        );
+      case 'rewards-summary':
+        return (
+          <RewardsSummary
+            {...sharedProps}
+            clearSessionRewards={game.clearSessionRewards}
+          />
+        );
       default:
-        return <HomePage {...sharedProps} />;
+        return <HomePage {...sharedProps} selectLanguage={game.selectLanguage} />;
     }
   }
 
-  // Language/character select pages get a minimal wrapper (no bottom nav clutter)
   const isOnboarding = page === 'language-select' || page === 'character-select';
 
   return (

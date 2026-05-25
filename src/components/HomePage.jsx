@@ -100,7 +100,7 @@ export default function HomePage({ state, onNavigate, selectLanguage }) {
           <div className="flex items-center gap-2 mb-3">
             <span className="text-2xl">{language.flag}</span>
             <div className="flex-1 min-w-0">
-              <div className="font-black text-gray-800 text-sm">{language.name} — Beginner Café</div>
+              <div className="font-black text-gray-800 text-sm">{language.name} — Explore Worlds</div>
               <div className="text-xs text-gray-500 font-medium truncate">{language.funFact}</div>
             </div>
             <button
@@ -175,42 +175,42 @@ export default function HomePage({ state, onNavigate, selectLanguage }) {
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-3">
         <button
-          onClick={() => language ? onNavigate('lesson') : onNavigate('language-select')}
+          onClick={() => language ? onNavigate('world-map') : onNavigate('language-select')}
           className="anime-card p-4 bg-gradient-to-br from-pink-50 to-rose-50
             hover:from-pink-100 hover:to-rose-100 transition-colors text-left group glow-pink"
         >
           <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">📖</div>
-          <h3 className="font-black text-gray-800 text-sm">Today's Lesson</h3>
+          <h3 className="font-black text-gray-800 text-sm">Today&apos;s Lesson</h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            {language ? `${language.flag} Café ordering` : 'Pick a language!'}
+            {language ? `${language.flag} Pick a world & lesson` : 'Pick a language!'}
           </p>
-          <div className="mt-1.5 text-xs font-bold text-pink-500">+50 XP →</div>
+          <div className="mt-1.5 text-xs font-bold text-pink-500">World Map →</div>
         </button>
 
         <button
-          onClick={() => language ? onNavigate('quiz') : onNavigate('language-select')}
+          onClick={() => language ? onNavigate('world-map') : onNavigate('language-select')}
           className="anime-card p-4 bg-gradient-to-br from-purple-50 to-violet-50
             hover:from-purple-100 hover:to-violet-100 transition-colors text-left group glow-purple"
         >
           <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">🎯</div>
           <h3 className="font-black text-gray-800 text-sm">Quick Quiz</h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            {language ? `Test your ${language.name}!` : 'Pick a language!'}
+            {language ? `Choose a lesson first` : 'Pick a language!'}
           </p>
-          <div className="mt-1.5 text-xs font-bold text-purple-500">+75 XP →</div>
+          <div className="mt-1.5 text-xs font-bold text-purple-500">World Map →</div>
         </button>
 
         <button
-          onClick={() => language ? onNavigate('chat') : onNavigate('language-select')}
+          onClick={() => language ? onNavigate('world-map') : onNavigate('language-select')}
           className="anime-card p-4 hover:shadow-xl transition-all text-left group glow-mint"
           style={{ background: 'linear-gradient(135deg, #f0fdf4, #ecfdf5)' }}
         >
           <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">💬</div>
           <h3 className="font-black text-gray-800 text-sm">Chat Practice</h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            {language ? `Chat with ${character?.name || 'your buddy'}!` : 'Pick a language!'}
+            {language ? `Practice with ${character?.name || 'your buddy'}!` : 'Pick a language!'}
           </p>
-          <div className="mt-1.5 text-xs font-bold text-green-600">+30 XP →</div>
+          <div className="mt-1.5 text-xs font-bold text-green-600">World Map →</div>
         </button>
 
         <button

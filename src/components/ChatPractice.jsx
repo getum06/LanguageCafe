@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { getLanguagePack, getVocabByKey } from '../data/lessonContent';
+import { getLanguagePack, getVocabByKey, resolveLessonKey } from '../data/lessonContent';
+import { getWorld } from '../data/worlds';
 import { CHARACTERS } from '../data/characters';
 
 function checkAnswer(input, keywords) {
@@ -8,11 +9,11 @@ function checkAnswer(input, keywords) {
   return keywords.some(kw => lower.includes(kw.toLowerCase())) ? 'correct' : 'partial';
 }
 
-function buildFeedback(languageId, languageName, type, result) {
-  const hello = getVocabByKey(languageId, 'hello')?.word;
-  const iWant = getVocabByKey(languageId, 'iWant')?.word;
-  const please = getVocabByKey(languageId, 'please')?.word;
-  const thankYou = getVocabByKey(languageId, 'thankYou')?.word;
+function buildFeedback(languageId, languageName, lessonKey, type, result) {
+  const hello = getVocabByKey(languageId, lessonKey, 'hello')?.word;
+  const iWant = getVocabByKey(languageId, lessonKey, 'iWant')?.word;
+  const please = getVocabByKey(languageId, lessonKey, 'please')?.word;
+  const thankYou = getVocabByKey(languageId, lessonKey, 'thankYou')?.word;
 
   const map = {
     greeting: {
@@ -78,11 +79,14 @@ function CharacterFeedback({ character, isCorrect }) {
   return isCorrect ? getMsg(character.correct) : getMsg(character.wrong);
 }
 
-export default function ChatPractice({ state, onNavigate, gainXP }) {
-  const pack = getLanguagePack(state.selectedLanguage);
-  const { meta: language, chat } = pack;
+export default function ChatPractice({ state, onNavigate, gainXP, recordSessionXp }) {
+  const lessonKey = resolveLessonKey(state);
+  const pack = getLanguagePack(state.selectedLanguage, lessonKey);
+  const { meta: language, lesson, chat } = pack;
+  const world = state.selectedWorld ? getWorld(state.selectedWorld) : null;
   const character = state.selectedCharacter ? CHARACTERS[state.selectedCharacter] : CHARACTERS.yumi;
   const prompts = chat.prompts;
+  const sceneLabel = world?.name ?? lesson.title;
 
   const [messages, setMessages]     = useState([]);
   const [input, setInput]           = useState('');
@@ -107,10 +111,10 @@ export default function ChatPractice({ state, onNavigate, gainXP }) {
     addMsg({
       role: 'character',
       text: `${character.emoji} ${character.id === 'yumi'
-        ? `Let's practice ${language.name} together! ${language.flag} I'll be your barista! 🌸`
+        ? `Let's practice ${language.name} together! ${language.flag} Ready for ${sceneLabel}? 🌸`
         : character.id === 'kai'
-        ? `Alright! ${language.name} café quest activated! ${language.flag} I'm your barista NPC! 🎮`
-        : `We begin our ${language.name} café practice now… ${language.flag} 🌙`}`,
+        ? `${language.name} quest activated! ${language.flag} ${sceneLabel} mode! 🎮`
+        : `We begin our ${language.name} practice in ${sceneLabel}… ${language.flag} 🌙`}`,
     });
     setTimeout(() => {
       addMsg({ role: 'prompt', text: prompts[0].prompt, hint: prompts[0].hint });
@@ -131,7 +135,7 @@ export default function ChatPractice({ state, onNavigate, gainXP }) {
 
     setTimeout(() => {
       const isCorrect = result === 'correct';
-      const langFeedback = buildFeedback(language.id, language.name, prompt.type, result);
+      const langFeedback = buildFeedback(language.id, language.name, lessonKey, prompt.type, result);
       const charMsg = isCorrect
         ? (character ? CharacterFeedback({ character, isCorrect: true }) : null)
         : null;
@@ -141,8 +145,9 @@ export default function ChatPractice({ state, onNavigate, gainXP }) {
       addMsg({ role: 'character', text: responseText, correct: isCorrect });
 
       if (isCorrect) {
-        const xp = 10;
+        const xp = chat.xpPerCorrect;
         gainXP(xp);
+        recordSessionXp?.('chat', xp);
         setXpEarned(x => x + xp);
 
         setTimeout(() => {
@@ -153,7 +158,7 @@ export default function ChatPractice({ state, onNavigate, gainXP }) {
           } else {
             addMsg({
               role: 'character',
-              text: `🎉 ${character.id === 'yumi' ? 'You did AMAZING!' : character.id === 'kai' ? 'GG EZ! You crushed it!' : 'Your journey in the café is complete.'}
+              text: `🎉 ${character.id === 'yumi' ? 'You did AMAZING!' : character.id === 'kai' ? 'GG EZ! You crushed it!' : 'Your practice is complete.'}
 You just had a full ${language.name} conversation! ${language.flag} Keep practicing! ${character.emoji}`,
               correct: true,
             });
@@ -186,7 +191,7 @@ You just had a full ${language.name} conversation! ${language.flag} Keep practic
       {/* Header */}
       <div className="flex items-center gap-3 pb-3 flex-shrink-0">
         <button
-          onClick={() => onNavigate('home')}
+          onClick={() => onNavigate('quiz')}
           className="w-10 h-10 rounded-xl bg-pink-100 border border-pink-200 flex items-center justify-center text-xl hover:bg-pink-200 transition-colors flex-shrink-0"
         >
           ←
@@ -199,7 +204,7 @@ You just had a full ${language.name} conversation! ${language.flag} Keep practic
           <div className="min-w-0">
             <div className="font-black text-gray-800 text-sm">{character.name}</div>
             <div className="text-xs text-gray-500 truncate">
-              {language.flag} {language.name} · Café Practice
+              {language.flag} {language.name} · {lesson.title}
             </div>
           </div>
           {xpEarned > 0 && (
@@ -220,7 +225,7 @@ You just had a full ${language.name} conversation! ${language.flag} Keep practic
             />
           </div>
           <div className="flex justify-between text-xs font-bold text-gray-400 mt-0.5">
-            <span>{language.flag} {language.name} Café</span>
+            <span>{language.flag} {lesson.title}</span>
             <span>{Math.min(promptIdx, prompts.length)}/{prompts.length}</span>
           </div>
         </div>
@@ -237,10 +242,10 @@ You just had a full ${language.name} conversation! ${language.flag} Keep practic
             </div>
             <div>
               <h2 className="font-black text-xl text-gray-800 mb-1">
-                {language.flag} {language.name} Café with {character.name}!
+                {language.flag} {lesson.title} with {character.name}!
               </h2>
               <p className="text-gray-500 font-medium text-sm max-w-xs mx-auto">
-                Practice ordering at a {language.name}-speaking café! {character.name} will guide you step by step.
+                Practice {language.name} in {sceneLabel}! {character.name} will guide you step by step.
               </p>
             </div>
             <div className={`p-4 rounded-2xl ${character.bgColor} border ${character.borderColor} max-w-xs w-full text-left`}>
@@ -379,8 +384,8 @@ You just had a full ${language.name} conversation! ${language.flag} Keep practic
       {/* Finished actions */}
       {finished && (
         <div className="pt-3 border-t-2 border-pink-100 grid grid-cols-2 gap-2 flex-shrink-0">
-          <button onClick={handleRestart}          className="btn-secondary py-2.5 text-sm">🔄 Again</button>
-          <button onClick={() => onNavigate('home')} className="btn-primary py-2.5 text-sm">🏠 Home</button>
+          <button onClick={handleRestart} className="btn-secondary py-2.5 text-sm">🔄 Again</button>
+          <button onClick={() => onNavigate('rewards-summary')} className="btn-primary py-2.5 text-sm">🏆 Rewards →</button>
         </div>
       )}
     </div>

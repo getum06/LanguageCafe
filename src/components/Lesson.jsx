@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getLanguagePack, LESSON_SLIDE_TYPES } from '../data/lessonContent';
+import { getLanguagePack, LESSON_SLIDE_TYPES, resolveLessonKey } from '../data/lessonContent';
 import { CHARACTERS } from '../data/characters';
 
 /* ── Vocab flip card ── */
@@ -33,18 +33,17 @@ function VocabCard({ word }) {
 }
 
 /* ── Slide components ── */
-function SlideIntro({ language }) {
+function SlideIntro({ language, lesson }) {
   return (
     <div className="text-center space-y-4 py-6">
-      <div className="text-6xl animate-float inline-block">{language.emoji}</div>
+      <div className="text-6xl animate-float inline-block">{lesson.emoji ?? language.emoji}</div>
       <div className="text-4xl">{language.flag}</div>
       <h2 className="font-black text-3xl text-cafe-brown">
         Welcome to {language.name}! {language.flag}
       </h2>
-      <h3 className="font-bold text-xl text-pink-500">Ordering at a Café ☕</h3>
+      <h3 className="font-bold text-xl text-pink-500">{lesson.title}</h3>
       <p className="text-gray-600 font-medium max-w-sm mx-auto leading-relaxed">
-        Today you'll learn how to order a drink at a {language.name}-speaking café!
-        We'll cover 8 essential words and a real conversation. ✨
+        {lesson.description ?? `Practice essential ${language.name} phrases in this lesson.`} ✨
       </p>
       <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-3 border border-purple-200 inline-block">
         <p className="font-bold text-purple-600 text-sm">{language.funFact}</p>
@@ -150,7 +149,7 @@ function SlideTips({ language }) {
   );
 }
 
-function SlideSummary({ language, onComplete }) {
+function SlideSummary({ language, lesson, onComplete }) {
   const keyPhrases = [
     `Greet someone: "${language.vocab.find(v => v.key === 'hello')?.word}"`,
     `Order a drink: "${language.vocab.find(v => v.key === 'iWant')?.word} + drink + ${language.vocab.find(v => v.key === 'please')?.word}"`,
@@ -179,8 +178,8 @@ function SlideSummary({ language, onComplete }) {
       </div>
 
       <div className="bg-yellow-50 rounded-2xl p-3 border border-yellow-200">
-        <p className="font-black text-yellow-600">+50 XP earned! ⭐</p>
-        <p className="text-gray-500 text-xs mt-0.5">Take the quiz to earn 75 more XP!</p>
+        <p className="font-black text-yellow-600">+{lesson?.xpReward ?? 50} XP earned! ⭐</p>
+        <p className="text-gray-500 text-xs mt-0.5">Take the quiz to earn more XP!</p>
       </div>
 
       <button onClick={onComplete} className="btn-primary w-full py-4 text-base">
@@ -191,8 +190,9 @@ function SlideSummary({ language, onComplete }) {
 }
 
 /* ── Main Lesson component ── */
-export default function Lesson({ state, onNavigate, completeLesson, gainXP }) {
-  const pack = getLanguagePack(state.selectedLanguage);
+export default function Lesson({ state, onNavigate, completeLesson, gainXP, recordSessionXp }) {
+  const lessonKey = resolveLessonKey(state);
+  const pack = getLanguagePack(state.selectedLanguage, lessonKey);
   const { meta: language, lesson } = pack;
   const lessonId = lesson.id;
   const character = state.selectedCharacter ? CHARACTERS[state.selectedCharacter] : null;
@@ -212,7 +212,8 @@ export default function Lesson({ state, onNavigate, completeLesson, gainXP }) {
   function handleComplete() {
     if (!completed) {
       completeLesson(lessonId);
-      gainXP(50);
+      gainXP(lesson.xpReward);
+      recordSessionXp?.('lesson', lesson.xpReward);
       setCompleted(true);
     }
     onNavigate('quiz');
@@ -226,7 +227,7 @@ export default function Lesson({ state, onNavigate, completeLesson, gainXP }) {
       {/* Header */}
       <div className="flex items-center gap-3">
         <button
-          onClick={() => onNavigate('home')}
+          onClick={() => onNavigate('lesson-select')}
           className="w-10 h-10 rounded-xl bg-pink-100 border border-pink-200 flex items-center
             justify-center text-xl hover:bg-pink-200 transition-colors"
         >
@@ -236,7 +237,7 @@ export default function Lesson({ state, onNavigate, completeLesson, gainXP }) {
           <div className="flex items-center gap-2">
             <span className="text-lg">{language.flag}</span>
             <h1 className="font-black text-lg text-cafe-brown leading-tight">
-              {language.name} — Café Ordering
+              {language.name} — {lesson.title}
             </h1>
           </div>
           <p className="text-xs text-gray-400 font-bold">
@@ -244,7 +245,7 @@ export default function Lesson({ state, onNavigate, completeLesson, gainXP }) {
           </p>
         </div>
         <div className="text-sm font-bold text-yellow-600 bg-yellow-50 px-2 py-1 rounded-xl border border-yellow-200 flex-shrink-0">
-          +50 XP
+          +{lesson.xpReward} XP
         </div>
       </div>
 
@@ -262,7 +263,7 @@ export default function Lesson({ state, onNavigate, completeLesson, gainXP }) {
           <span className="text-3xl flex-shrink-0">{character.emoji}</span>
           <p className="font-bold text-sm text-gray-700">
             {character.id === 'yumi' && `Yay! ${language.flag} ${language.name} time! Let's learn together! 🌸`}
-            {character.id === 'kai' && `New quest unlocked: ${language.name} Café Run! Let's gooo! 🎮`}
+            {character.id === 'kai' && `New quest unlocked: ${language.name} ${lesson.title}! Let's gooo! 🎮`}
             {character.id === 'luna' && `Every word is a spell. Let us begin your ${language.name} journey… 🌙`}
           </p>
         </div>
@@ -270,11 +271,11 @@ export default function Lesson({ state, onNavigate, completeLesson, gainXP }) {
 
       {/* Slide content */}
       <div className="anime-card p-5 min-h-[300px]">
-        {slide === 'intro'    && <SlideIntro    language={language} />}
+        {slide === 'intro'    && <SlideIntro    language={language} lesson={lesson} />}
         {slide === 'vocab'    && <SlideVocab    language={{ ...language, vocab: lesson.vocab }} />}
         {slide === 'dialogue' && <SlideDialogue language={{ ...language, dialogue: lesson.dialogue }} />}
         {slide === 'tips'     && <SlideTips     language={{ ...language, tips: lesson.tips }} />}
-        {slide === 'summary'  && <SlideSummary  language={{ ...language, vocab: lesson.vocab }} onComplete={handleComplete} />}
+        {slide === 'summary'  && <SlideSummary  language={{ ...language, vocab: lesson.vocab }} lesson={lesson} onComplete={handleComplete} />}
       </div>
 
       {/* Navigation */}

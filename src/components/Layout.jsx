@@ -101,11 +101,11 @@ export default function Layout({ state, onNavigate, isOnboarding, children }) {
               { id: 'home',             icon: '🏠', label: 'Home' },
               { id: 'language-select',  icon: language ? language.flag : '🌍', label: 'Language' },
               { id: 'world-map',        icon: '🗺️',  label: 'Map' },
-              { id: 'lesson',           icon: '📖', label: 'Learn' },
-              { id: 'chat',             icon: '💬', label: 'Chat' },
-            ].map(nav => (
+              { id: 'world-map',        icon: '📖', label: 'Learn' },
+              { id: 'world-map',        icon: '💬', label: 'Chat' },
+            ].map((nav, i) => (
               <button
-                key={nav.id}
+                key={`${nav.id}-${i}`}
                 onClick={() => onNavigate(nav.id)}
                 className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-2xl
                   hover:bg-pink-50 transition-colors group"

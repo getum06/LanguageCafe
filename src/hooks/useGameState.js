@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getStoredLanguage, setStoredLanguage } from '../lib/languageStorage';
+import { getStoredWorld, getStoredLesson, setStoredWorld, setStoredLesson } from '../lib/selectionStorage';
 
 const DEFAULT_STATE = {
   xp: 0,
@@ -7,24 +8,27 @@ const DEFAULT_STATE = {
   streak: 0,
   selectedCharacter: null,
   selectedLanguage: null,
+  selectedWorld: null,
+  selectedLesson: null,
   completedLessons: [],
   completedQuizzes: [],
   lastPlayedDate: null,
   unlockedAreas: ['cozyCafe'],
+  sessionRewards: null,
 };
 
 function loadFromStorage() {
   try {
     const saved = localStorage.getItem('lingoCafeQuest');
     const storedLanguage = getStoredLanguage();
+    const storedWorld = getStoredWorld();
+    const storedLesson = getStoredLesson();
 
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Dedicated language key takes precedence for consistency
-      if (storedLanguage) {
-        parsed.selectedLanguage = storedLanguage;
-      }
-      // Migrate legacy world area ids
+      if (storedLanguage) parsed.selectedLanguage = storedLanguage;
+      if (storedWorld) parsed.selectedWorld = storedWorld;
+      if (storedLesson) parsed.selectedLesson = storedLesson;
       if (Array.isArray(parsed.unlockedAreas)) {
         const legacyMap = {
           'cozy-cafe': 'cozyCafe',
@@ -46,8 +50,13 @@ function loadFromStorage() {
       return { ...DEFAULT_STATE, ...parsed };
     }
 
-    if (storedLanguage) {
-      return { ...DEFAULT_STATE, selectedLanguage: storedLanguage };
+    if (storedLanguage || storedWorld || storedLesson) {
+      return {
+        ...DEFAULT_STATE,
+        ...(storedLanguage && { selectedLanguage: storedLanguage }),
+        ...(storedWorld && { selectedWorld: storedWorld }),
+        ...(storedLesson && { selectedLesson: storedLesson }),
+      };
     }
   } catch {
     // ignore
@@ -59,6 +68,8 @@ function saveToStorage(state) {
   try {
     localStorage.setItem('lingoCafeQuest', JSON.stringify(state));
     setStoredLanguage(state.selectedLanguage);
+    setStoredWorld(state.selectedWorld);
+    setStoredLesson(state.selectedLesson);
   } catch {
     // ignore
   }
@@ -103,6 +114,51 @@ export function useGameState() {
     setState(prev => ({ ...prev, selectedLanguage: languageId }));
   }
 
+  function selectWorld(worldId) {
+    setStoredWorld(worldId);
+    setState(prev => ({ ...prev, selectedWorld: worldId }));
+  }
+
+  function selectLesson(lessonId) {
+    setStoredLesson(lessonId);
+    setState(prev => ({ ...prev, selectedLesson: lessonId }));
+  }
+
+  function startLessonFlow(worldId, lessonId) {
+    setStoredWorld(worldId);
+    setStoredLesson(lessonId);
+    setState(prev => ({
+      ...prev,
+      selectedWorld: worldId,
+      selectedLesson: lessonId,
+      sessionRewards: {
+        worldId,
+        lessonId,
+        lessonXp: 0,
+        quizXp: 0,
+        chatXp: 0,
+      },
+    }));
+  }
+
+  function recordSessionXp(type, amount) {
+    setState(prev => {
+      if (!prev.sessionRewards || amount <= 0) return prev;
+      const key = `${type}Xp`;
+      return {
+        ...prev,
+        sessionRewards: {
+          ...prev.sessionRewards,
+          [key]: (prev.sessionRewards[key] ?? 0) + amount,
+        },
+      };
+    });
+  }
+
+  function clearSessionRewards() {
+    setState(prev => ({ ...prev, sessionRewards: null }));
+  }
+
   function completeLesson(lessonId) {
     setState(prev => ({
       ...prev,
@@ -132,6 +188,8 @@ export function useGameState() {
 
   function resetProgress() {
     setStoredLanguage(null);
+    setStoredWorld(null);
+    setStoredLesson(null);
     setState(DEFAULT_STATE);
   }
 
@@ -142,6 +200,11 @@ export function useGameState() {
     gainHeart,
     selectCharacter,
     selectLanguage,
+    selectWorld,
+    selectLesson,
+    startLessonFlow,
+    recordSessionXp,
+    clearSessionRewards,
     completeLesson,
     completeQuiz,
     unlockArea,
