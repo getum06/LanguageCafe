@@ -178,8 +178,8 @@ function SlideSummary({ language, lesson, onComplete }) {
       </div>
 
       <div className="bg-yellow-50 rounded-2xl p-3 border border-yellow-200">
-        <p className="font-black text-yellow-600">+50 XP earned! ⭐</p>
-        <p className="text-gray-500 text-xs mt-0.5">Take the quiz to earn 75 more XP!</p>
+        <p className="font-black text-yellow-600">+{lesson?.xpReward ?? 50} XP earned! ⭐</p>
+        <p className="text-gray-500 text-xs mt-0.5">Take the quiz to earn more XP!</p>
       </div>
 
       <button onClick={onComplete} className="btn-primary w-full py-4 text-base">
@@ -275,7 +275,7 @@ export default function Lesson({ state, onNavigate, completeLesson, gainXP, reco
         {slide === 'vocab'    && <SlideVocab    language={{ ...language, vocab: lesson.vocab }} />}
         {slide === 'dialogue' && <SlideDialogue language={{ ...language, dialogue: lesson.dialogue }} />}
         {slide === 'tips'     && <SlideTips     language={{ ...language, tips: lesson.tips }} />}
-        {slide === 'summary'  && <SlideSummary  language={{ ...language, vocab: lesson.vocab }} onComplete={handleComplete} />}
+        {slide === 'summary'  && <SlideSummary  language={{ ...language, vocab: lesson.vocab }} lesson={lesson} onComplete={handleComplete} />}
       </div>
 
       {/* Navigation */}
