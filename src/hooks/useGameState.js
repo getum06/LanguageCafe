@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getStoredLanguage, setStoredLanguage } from '../lib/languageStorage';
 import { getStoredWorld, getStoredLesson, setStoredWorld, setStoredLesson } from '../lib/selectionStorage';
+import { recordSkillAttempt as applySkillAttempt, createEmptySkillTracking } from '../data/skillTracking';
 
 const DEFAULT_STATE = {
   xp: 0,
@@ -15,6 +16,7 @@ const DEFAULT_STATE = {
   lastPlayedDate: null,
   unlockedAreas: ['cozyCafe'],
   sessionRewards: null,
+  skillTracking: createEmptySkillTracking(),
 };
 
 function loadFromStorage() {
@@ -47,7 +49,7 @@ function loadFromStorage() {
           parsed.streak = 0;
         }
       }
-      return { ...DEFAULT_STATE, ...parsed };
+      return { ...DEFAULT_STATE, ...parsed, skillTracking: parsed.skillTracking ?? createEmptySkillTracking() };
     }
 
     if (storedLanguage || storedWorld || storedLesson) {
@@ -155,6 +157,23 @@ export function useGameState() {
     });
   }
 
+  function recordSkillAttempt(skillId, isCorrect, wordKey = null) {
+    setState(prev => {
+      const languageId = prev.selectedLanguage;
+      if (!languageId) return prev;
+      return {
+        ...prev,
+        skillTracking: applySkillAttempt(
+          prev.skillTracking,
+          languageId,
+          skillId,
+          isCorrect,
+          wordKey,
+        ),
+      };
+    });
+  }
+
   function clearSessionRewards() {
     setState(prev => ({ ...prev, sessionRewards: null }));
   }
@@ -205,6 +224,7 @@ export function useGameState() {
     startLessonFlow,
     recordSessionXp,
     clearSessionRewards,
+    recordSkillAttempt,
     completeLesson,
     completeQuiz,
     unlockArea,

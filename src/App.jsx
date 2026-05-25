@@ -10,6 +10,7 @@ import Lesson from './components/Lesson';
 import Quiz from './components/Quiz';
 import ChatPractice from './components/ChatPractice';
 import RewardsSummary from './components/RewardsSummary';
+import ReviewPractice from './components/ReviewPractice';
 
 function getInitialPage(state) {
   if (!state.selectedLanguage) return 'language-select';
@@ -99,6 +100,7 @@ export default function App() {
             {...sharedProps}
             completeQuiz={game.completeQuiz}
             recordSessionXp={game.recordSessionXp}
+            recordSkillAttempt={game.recordSkillAttempt}
           />
         );
       case 'chat':
@@ -106,6 +108,7 @@ export default function App() {
           <ChatPractice
             {...sharedProps}
             recordSessionXp={game.recordSessionXp}
+            recordSkillAttempt={game.recordSkillAttempt}
           />
         );
       case 'rewards-summary':
@@ -113,6 +116,13 @@ export default function App() {
           <RewardsSummary
             {...sharedProps}
             clearSessionRewards={game.clearSessionRewards}
+          />
+        );
+      case 'review-practice':
+        return (
+          <ReviewPractice
+            {...sharedProps}
+            recordSkillAttempt={game.recordSkillAttempt}
           />
         );
       default:
