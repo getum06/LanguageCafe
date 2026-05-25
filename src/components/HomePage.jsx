@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CHARACTERS } from '../data/characters';
 import { getLanguage } from '../data/languages';
+import { getCompanionFeedback } from '../data/companionFeedback';
 import { getReviewRecommendations } from '../data/skillReview';
 import { getDueReviewWords } from '../data/spacedRepetition';
 import { SKILL_EMOJI } from '../data/skillTracking';
@@ -51,6 +52,36 @@ export default function HomePage({ state, onNavigate, selectLanguage }) {
     ? getDueReviewWords(state.vocabMastery, state.selectedLanguage)
     : [];
 
+  const companionId = state.selectedCharacter;
+  const dueWordCount = dueWords.length || review.words.length;
+  const feedbackContext = {
+    languageName: language?.name,
+    languageFlag: language?.flag,
+    streak: state.streak,
+    level,
+    dueWordCount,
+  };
+
+  const [streakFeedback] = useState(() =>
+    companionId && state.streak > 0
+      ? getCompanionFeedback(companionId, 'streakContinue', feedbackContext)
+      : null,
+  );
+
+  const recentlyLeveledUp = state.xp > 0 && state.xp % xpToNext < 8;
+  const [levelUpFeedback] = useState(() =>
+    companionId && recentlyLeveledUp
+      ? getCompanionFeedback(companionId, 'levelUp', feedbackContext)
+      : null,
+  );
+
+  const needsReview = dueWordCount > 0 || review.weakSkills.length > 0;
+  const [reviewFeedback] = useState(() =>
+    companionId && needsReview
+      ? getCompanionFeedback(companionId, 'reviewNeeded', feedbackContext)
+      : null,
+  );
+
   return (
     <div className="space-y-5">
       {/* Hero Banner */}
@@ -89,6 +120,17 @@ export default function HomePage({ state, onNavigate, selectLanguage }) {
               {Array(state.hearts).fill('❤️').join('')}{Array(5 - state.hearts).fill('🖤').join('')}
             </div>
           </div>
+
+          {character && streakFeedback && state.streak > 0 && (
+            <p className="mt-3 text-sm font-bold text-purple-800 bg-white/60 rounded-2xl px-3 py-2">
+              {character.emoji} {streakFeedback}
+            </p>
+          )}
+          {character && levelUpFeedback && recentlyLeveledUp && (
+            <p className="mt-2 text-sm font-bold text-yellow-800 bg-white/60 rounded-2xl px-3 py-2">
+              {character.emoji} {levelUpFeedback}
+            </p>
+          )}
         </div>
       </div>
 
@@ -172,6 +214,11 @@ export default function HomePage({ state, onNavigate, selectLanguage }) {
             <span className="text-2xl">📅</span>
             <h3 className="font-black text-violet-900 text-sm">Words to Review Today</h3>
           </div>
+          {character && reviewFeedback && (
+            <p className="text-sm font-bold text-violet-800 mb-3 bg-white/60 rounded-2xl px-3 py-2">
+              {character.emoji} {reviewFeedback}
+            </p>
+          )}
           <p className="text-sm font-bold text-violet-700 mb-3">
             {dueWords.length} word{dueWords.length === 1 ? '' : 's'} ready for spaced review
           </p>
@@ -207,6 +254,11 @@ export default function HomePage({ state, onNavigate, selectLanguage }) {
             <span className="text-2xl">🎯</span>
             <h3 className="font-black text-orange-800 text-sm">Review recommended</h3>
           </div>
+          {character && reviewFeedback && dueWords.length === 0 && (
+            <p className="text-sm font-bold text-orange-800 mb-3 bg-white/60 rounded-2xl px-3 py-2">
+              {character.emoji} {reviewFeedback}
+            </p>
+          )}
           <div className="space-y-2 mb-4">
             {review.weakSkills.map(skill => (
               <div
@@ -235,7 +287,7 @@ export default function HomePage({ state, onNavigate, selectLanguage }) {
       )}
 
       {/* Review practice when missed words exist but no weak skill banner yet */}
-      {language && review.weakSkills.length === 0 && review.words.length > 0 && (
+      {language && review.weakSkills.length === 0 && review.words.length > 0 && dueWords.length === 0 && (
         <button
           type="button"
           onClick={() => onNavigate('review-practice')}
@@ -246,7 +298,9 @@ export default function HomePage({ state, onNavigate, selectLanguage }) {
             <div>
               <h3 className="font-black text-amber-800 text-sm">Review Practice</h3>
               <p className="text-xs text-gray-500 font-medium">
-                {review.words.length} missed vocabulary card{review.words.length === 1 ? '' : 's'} to review
+                {character && reviewFeedback
+                  ? `${character.emoji} ${reviewFeedback}`
+                  : `${review.words.length} missed vocabulary card${review.words.length === 1 ? '' : 's'} to review`}
               </p>
             </div>
           </div>

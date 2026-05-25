@@ -3,6 +3,7 @@ import { getChatPromptSkillMeta } from '../data/skillReview';
 import { getLanguagePack, getVocabByKey, resolveLessonKey } from '../data/lessonContent';
 import { getWorld } from '../data/worlds';
 import { CHARACTERS } from '../data/characters';
+import { getCompanionFeedback } from '../data/companionFeedback';
 
 function checkAnswer(input, keywords) {
   const lower = input.toLowerCase().trim();
@@ -74,10 +75,13 @@ function buildFeedback(languageId, languageName, lessonKey, type, result) {
   return list[Math.floor(Math.random() * list.length)];
 }
 
-function CharacterFeedback({ character, isCorrect }) {
-  const getMsg = (arr) => arr[Math.floor(Math.random() * arr.length)];
-  if (!character) return null;
-  return isCorrect ? getMsg(character.correct) : getMsg(character.wrong);
+function companionContext(language, lesson, sceneLabel) {
+  return {
+    languageName: language.name,
+    languageFlag: language.flag,
+    lessonTitle: lesson.title,
+    sceneLabel,
+  };
 }
 
 export default function ChatPractice({ state, onNavigate, gainXP, recordSessionXp, recordSkillAttempt }) {
@@ -109,13 +113,10 @@ export default function ChatPractice({ state, onNavigate, gainXP, recordSessionX
 
   function startChat() {
     setStarted(true);
+    const ctx = companionContext(language, lesson, sceneLabel);
     addMsg({
       role: 'character',
-      text: `${character.emoji} ${character.id === 'yumi'
-        ? `Let's practice ${language.name} together! ${language.flag} Ready for ${sceneLabel}? 🌸`
-        : character.id === 'kai'
-        ? `${language.name} quest activated! ${language.flag} ${sceneLabel} mode! 🎮`
-        : `We begin our ${language.name} practice in ${sceneLabel}… ${language.flag} 🌙`}`,
+      text: `${character.emoji} ${getCompanionFeedback(character.id, 'encouragement', ctx)}`,
     });
     setTimeout(() => {
       addMsg({ role: 'prompt', text: prompts[0].prompt, hint: prompts[0].hint });
@@ -138,6 +139,7 @@ export default function ChatPractice({ state, onNavigate, gainXP, recordSessionX
       const isCorrect = result === 'correct';
       const isPartial = result === 'partial';
       const { skill, wordKey } = getChatPromptSkillMeta(prompt);
+      const ctx = companionContext(language, lesson, sceneLabel);
 
       if (isCorrect) {
         recordSkillAttempt?.(skill, true, wordKey, lessonKey);
@@ -146,8 +148,12 @@ export default function ChatPractice({ state, onNavigate, gainXP, recordSessionX
       }
 
       const langFeedback = buildFeedback(language.id, language.name, lessonKey, prompt.type, result);
-      const charMsg = isCorrect
-        ? (character ? CharacterFeedback({ character, isCorrect: true }) : null)
+      const charMsg = character
+        ? getCompanionFeedback(
+            character.id,
+            isCorrect ? 'correctAnswer' : 'wrongAnswer',
+            ctx,
+          )
         : null;
 
       const responseText = charMsg ? `${charMsg} ${langFeedback}` : langFeedback;
@@ -168,8 +174,10 @@ export default function ChatPractice({ state, onNavigate, gainXP, recordSessionX
           } else {
             addMsg({
               role: 'character',
-              text: `🎉 ${character.id === 'yumi' ? 'You did AMAZING!' : character.id === 'kai' ? 'GG EZ! You crushed it!' : 'Your practice is complete.'}
-You just had a full ${language.name} conversation! ${language.flag} Keep practicing! ${character.emoji}`,
+              text: `${getCompanionFeedback(character.id, 'lessonComplete', {
+                ...ctx,
+                xpEarned: xpEarned + xp,
+              })} ${language.flag}`,
               correct: true,
             });
             addMsg({ role: 'system', text: `🏆 Chat Complete! +${xpEarned + xp} XP total earned!` });
