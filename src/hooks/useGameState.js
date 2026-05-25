@@ -10,7 +10,7 @@ const DEFAULT_STATE = {
   completedLessons: [],
   completedQuizzes: [],
   lastPlayedDate: null,
-  unlockedAreas: ['cozy-cafe'],
+  unlockedAreas: ['cozyCafe'],
 };
 
 function loadFromStorage() {
@@ -23,6 +23,16 @@ function loadFromStorage() {
       // Dedicated language key takes precedence for consistency
       if (storedLanguage) {
         parsed.selectedLanguage = storedLanguage;
+      }
+      // Migrate legacy world area ids
+      if (Array.isArray(parsed.unlockedAreas)) {
+        const legacyMap = {
+          'cozy-cafe': 'cozyCafe',
+          'anime-school': 'animeSchool',
+          marketplace: 'nightMarket',
+          'magic-forest': 'magicForest',
+        };
+        parsed.unlockedAreas = parsed.unlockedAreas.map(id => legacyMap[id] || id);
       }
       const today = new Date().toDateString();
       const last = parsed.lastPlayedDate;

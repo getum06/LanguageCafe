@@ -46,15 +46,15 @@ function buildLanguageLessons(langId) {
   if (!raw) {
     return {
       cafe: createLessonStub('cafe', 'Café Ordering', 'cozyCafe', 1, 0),
-      school: createLessonStub('school', 'School Basics', 'animeSchool', 2, 100),
-      market: createLessonStub('market', 'Marketplace', 'marketplace', 3, 200),
+      school: createLessonStub('school', 'School Basics', 'animeSchool', 2, 150),
+      market: createLessonStub('market', 'Night Market', 'nightMarket', 3, 300),
     };
   }
 
   return {
     cafe: cafeLessonFromLegacy(raw),
-    school: createLessonStub('school', 'School Basics', 'animeSchool', 2, 100),
-    market: createLessonStub('market', 'Marketplace', 'marketplace', 3, 200),
+    school: createLessonStub('school', 'School Basics', 'animeSchool', 2, 150),
+    market: createLessonStub('market', 'Night Market', 'nightMarket', 3, 300),
   };
 }
 
