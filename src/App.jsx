@@ -56,12 +56,7 @@ export default function App() {
           />
         );
       case 'home':
-        return (
-          <HomePage
-            {...sharedProps}
-            selectLanguage={game.selectLanguage}
-          />
-        );
+        return <HomePage {...sharedProps} />;
       case 'world-map':
         return <WorldMap {...sharedProps} />;
       case 'lesson':

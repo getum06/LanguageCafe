@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { CHARACTERS } from '../data/characters';
 import { getLanguage } from '../data/languages';
-import LanguageSwitcher from './LanguageSwitcher';
 
 const FLOATING_ITEMS = ['☕', '🌸', '✨', '🍰', '⭐', '💕', '🧁', '🌙'];
 
@@ -13,7 +12,7 @@ function FloatingParticle({ emoji, style }) {
   );
 }
 
-export default function HomePage({ state, onNavigate, selectLanguage }) {
+export default function HomePage({ state, onNavigate }) {
   const character = state.selectedCharacter ? CHARACTERS[state.selectedCharacter] : null;
   const language = state.selectedLanguage ? getLanguage(state.selectedLanguage) : null;
 
@@ -95,26 +94,21 @@ export default function HomePage({ state, onNavigate, selectLanguage }) {
       )}
 
       {/* Language quick-switch strip (if language selected) */}
-      {language && selectLanguage && (
-        <div className={`rounded-2xl p-4 border-2 ${language.borderColor} ${language.bgColor}`}>
-          <div className="flex items-center gap-2 mb-3">
+      {language && (
+        <div className={`rounded-2xl p-3 border-2 ${language.borderColor} ${language.bgColor} flex items-center justify-between`}>
+          <div className="flex items-center gap-2">
             <span className="text-2xl">{language.flag}</span>
-            <div className="flex-1 min-w-0">
+            <div>
               <div className="font-black text-gray-800 text-sm">{language.name} — Beginner Café</div>
-              <div className="text-xs text-gray-500 font-medium truncate">{language.funFact}</div>
+              <div className="text-xs text-gray-500 font-medium">{language.funFact}</div>
             </div>
-            <button
-              type="button"
-              onClick={() => onNavigate('language-select')}
-              className={`text-xs font-black px-3 py-1.5 rounded-xl border ${language.borderColor} ${language.badgeColor} hover:opacity-80 transition-opacity flex-shrink-0`}
-            >
-              All
-            </button>
           </div>
-          <LanguageSwitcher
-            selectedId={state.selectedLanguage}
-            onSelect={selectLanguage}
-          />
+          <button
+            onClick={() => onNavigate('language-select')}
+            className={`text-xs font-black px-3 py-1.5 rounded-xl border ${language.borderColor} ${language.badgeColor} hover:opacity-80 transition-opacity flex-shrink-0`}
+          >
+            Change
+          </button>
         </div>
       )}
 

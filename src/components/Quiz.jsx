@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getLanguagePack } from '../data/lessonContent';
+import { getLanguage } from '../data/languages';
 import { CHARACTERS } from '../data/characters';
 
 function getRandMsg(arr) {
@@ -13,10 +13,9 @@ function ConfettiPiece({ style }) {
 }
 
 export default function Quiz({ state, onNavigate, gainXP, loseHeart, completeQuiz }) {
-  const pack = getLanguagePack(state.selectedLanguage);
-  const { meta: language, quiz } = pack;
-  const quizId = quiz.id;
-  const questions = quiz.questions;
+  const language = getLanguage(state.selectedLanguage);
+  const quizId = `quiz-cafe-${language.id}`;
+  const questions = language.quiz;
 
   const character = state.selectedCharacter ? CHARACTERS[state.selectedCharacter] : null;
 

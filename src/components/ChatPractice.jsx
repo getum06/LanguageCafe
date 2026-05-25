@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { getLanguagePack, getVocabByKey } from '../data/lessonContent';
+import { getLanguage } from '../data/languages';
 import { CHARACTERS } from '../data/characters';
 
 function checkAnswer(input, keywords) {
@@ -8,31 +8,26 @@ function checkAnswer(input, keywords) {
   return keywords.some(kw => lower.includes(kw.toLowerCase())) ? 'correct' : 'partial';
 }
 
-function buildFeedback(languageId, languageName, type, result) {
-  const hello = getVocabByKey(languageId, 'hello')?.word;
-  const iWant = getVocabByKey(languageId, 'iWant')?.word;
-  const please = getVocabByKey(languageId, 'please')?.word;
-  const thankYou = getVocabByKey(languageId, 'thankYou')?.word;
-
+function buildFeedback(language, type, result) {
   const map = {
     greeting: {
       correct: [
         `¡Perfecto! Great greeting! The barista looks happy to see you! 😊`,
-        `Wonderful! You said hello like a true ${languageName} speaker! 🌟`,
+        `Wonderful! You said hello like a true ${language.name} speaker! 🌟`,
       ],
       partial: [
-        `Almost! Try a greeting like "${hello}" — that means "hello"!`,
-        `Good effort! In ${languageName} you'd say "${hello}" to greet someone!`,
+        `Almost! Try a greeting like "${language.vocab.find(v => v.key === 'hello')?.word}" — that means "hello"!`,
+        `Good effort! In ${language.name} you'd say "${language.vocab.find(v => v.key === 'hello')?.word}" to greet someone!`,
       ],
     },
     order: {
       correct: [
         `The barista understood you perfectly! Great ordering! ☕`,
-        `Amazing! You ordered like a pro ${languageName} speaker! 🌟`,
+        `Amazing! You ordered like a pro ${language.name} speaker! 🌟`,
       ],
       partial: [
-        `Try using "${iWant}" + a drink name + "${please}"!`,
-        `So close! Include the word for "I want" (${iWant}) in your order!`,
+        `Try using "${language.vocab.find(v => v.key === 'iWant')?.word}" + a drink name + "${language.vocab.find(v => v.key === 'please')?.word}"!`,
+        `So close! Include the word for "I want" (${language.vocab.find(v => v.key === 'iWant')?.word}) in your order!`,
       ],
     },
     size: {
@@ -41,28 +36,28 @@ function buildFeedback(languageId, languageName, type, result) {
         `Great job! Size words are super useful everywhere! 💪`,
       ],
       partial: [
-        `For large or small in ${languageName}, check the hint! 😊`,
+        `For large or small in ${language.name}, check the hint! 😊`,
         `Try saying large or small — peek at the hint if you need it!`,
       ],
     },
     price: {
       correct: [
         `You asked the price perfectly! You can shop anywhere now! 💰`,
-        `Excellent! That question works in any ${languageName}-speaking café or shop! 🛍️`,
+        `Excellent! That question works in any ${language.name}-speaking café or shop! 🛍️`,
       ],
       partial: [
-        `To ask the price in ${languageName}, check the hint! 💡`,
-        `Almost! Peek at the hint for how to ask "how much?" in ${languageName}!`,
+        `To ask the price in ${language.name}, check the hint! 💡`,
+        `Almost! Peek at the hint for how to ask "how much?" in ${language.name}!`,
       ],
     },
     thanks: {
       correct: [
-        `"${thankYou}"! The barista is smiling! 💕`,
-        `So polite! "${thankYou}" is the key to every ${languageName} heart! 🌸`,
+        `"${language.vocab.find(v => v.key === 'thankYou')?.word}"! The barista is smiling! 💕`,
+        `So polite! "${language.vocab.find(v => v.key === 'thankYou')?.word}" is the key to every ${language.name} heart! 🌸`,
       ],
       partial: [
-        `Try saying "${thankYou}" — that means thank you! 💕`,
-        `Just say "${thankYou}" and you're done! 😊`,
+        `Try saying "${language.vocab.find(v => v.key === 'thankYou')?.word}" — that means thank you! 💕`,
+        `Just say "${language.vocab.find(v => v.key === 'thankYou')?.word}" and you're done! 😊`,
       ],
     },
   };
@@ -79,10 +74,9 @@ function CharacterFeedback({ character, isCorrect }) {
 }
 
 export default function ChatPractice({ state, onNavigate, gainXP }) {
-  const pack = getLanguagePack(state.selectedLanguage);
-  const { meta: language, chat } = pack;
+  const language  = getLanguage(state.selectedLanguage);
   const character = state.selectedCharacter ? CHARACTERS[state.selectedCharacter] : CHARACTERS.yumi;
-  const prompts = chat.prompts;
+  const prompts   = language.chatPrompts;
 
   const [messages, setMessages]     = useState([]);
   const [input, setInput]           = useState('');
@@ -131,7 +125,7 @@ export default function ChatPractice({ state, onNavigate, gainXP }) {
 
     setTimeout(() => {
       const isCorrect = result === 'correct';
-      const langFeedback = buildFeedback(language.id, language.name, prompt.type, result);
+      const langFeedback = buildFeedback(language, prompt.type, result);
       const charMsg = isCorrect
         ? (character ? CharacterFeedback({ character, isCorrect: true }) : null)
         : null;

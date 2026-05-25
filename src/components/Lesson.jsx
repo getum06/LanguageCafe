@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getLanguagePack, LESSON_SLIDE_TYPES } from '../data/lessonContent';
+import { getLanguage } from '../data/languages';
 import { CHARACTERS } from '../data/characters';
 
 /* ── Vocab flip card ── */
@@ -192,12 +192,11 @@ function SlideSummary({ language, onComplete }) {
 
 /* ── Main Lesson component ── */
 export default function Lesson({ state, onNavigate, completeLesson, gainXP }) {
-  const pack = getLanguagePack(state.selectedLanguage);
-  const { meta: language, lesson } = pack;
-  const lessonId = lesson.id;
+  const language = getLanguage(state.selectedLanguage);
+  const lessonId = `cafe-ordering-${language.id}`;
   const character = state.selectedCharacter ? CHARACTERS[state.selectedCharacter] : null;
 
-  const SLIDES = LESSON_SLIDE_TYPES;
+  const SLIDES = ['intro', 'vocab', 'dialogue', 'tips', 'summary'];
   const [slideIdx, setSlideIdx] = useState(0);
   const [completed, setCompleted] = useState(state.completedLessons.includes(lessonId));
   const slide = SLIDES[slideIdx];
@@ -271,10 +270,10 @@ export default function Lesson({ state, onNavigate, completeLesson, gainXP }) {
       {/* Slide content */}
       <div className="anime-card p-5 min-h-[300px]">
         {slide === 'intro'    && <SlideIntro    language={language} />}
-        {slide === 'vocab'    && <SlideVocab    language={{ ...language, vocab: lesson.vocab }} />}
-        {slide === 'dialogue' && <SlideDialogue language={{ ...language, dialogue: lesson.dialogue }} />}
-        {slide === 'tips'     && <SlideTips     language={{ ...language, tips: lesson.tips }} />}
-        {slide === 'summary'  && <SlideSummary  language={{ ...language, vocab: lesson.vocab }} onComplete={handleComplete} />}
+        {slide === 'vocab'    && <SlideVocab    language={language} />}
+        {slide === 'dialogue' && <SlideDialogue language={language} />}
+        {slide === 'tips'     && <SlideTips     language={language} />}
+        {slide === 'summary'  && <SlideSummary  language={language} onComplete={handleComplete} />}
       </div>
 
       {/* Navigation */}

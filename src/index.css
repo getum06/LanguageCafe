@@ -74,50 +74,6 @@ body {
     border-right: 14px solid transparent;
     border-top: 14px solid #C9B1FF;
   }
-
-  /* Anime-inspired language selector buttons */
-  .lang-btn-card {
-    @apply relative overflow-hidden;
-  }
-  .lang-btn-card::before {
-    content: '';
-    @apply absolute inset-0 opacity-0 transition-opacity duration-300 pointer-events-none;
-    background: linear-gradient(
-      105deg,
-      transparent 40%,
-      rgba(255, 255, 255, 0.5) 50%,
-      transparent 60%
-    );
-  }
-  .lang-btn-card:hover::before {
-    @apply opacity-100;
-    animation: lang-shine 0.8s ease-out;
-  }
-  .lang-btn-selected {
-    box-shadow:
-      0 0 0 2px rgba(255, 183, 197, 0.5),
-      0 8px 24px rgba(201, 177, 255, 0.35);
-  }
-  .lang-btn-compact:active {
-    @apply scale-95;
-  }
-  .lang-btn-confirm {
-    background-size: 200% 200%;
-    animation: lang-gradient-shift 4s ease infinite;
-  }
-  .lang-btn-flag {
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
-  }
-}
-
-@keyframes lang-shine {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-@keyframes lang-gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
 }
 
 /* Star particles */
