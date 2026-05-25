@@ -1,21 +1,36 @@
 /**
- * Reusable lesson content schema and accessors.
- * All lessons, quizzes, and chat prompts resolve through getLanguagePack().
+ * Lesson content accessors — multi-lesson catalog with legacy compatibility.
  */
-import { getLanguage } from './languages';
+import { getLanguageMeta } from './languageMeta';
+import {
+  DEFAULT_LANGUAGE_ID,
+  DEFAULT_LESSON_ID,
+  getLanguageCatalog,
+  getLessonProgressId,
+  getLessonTopic,
+  getQuizProgressId,
+  isLessonReady,
+  lessonCatalog,
+  normalizeLanguageId,
+  normalizeLessonId,
+} from './lessonCatalog';
 
-export { LANGUAGE_LIST } from './languages';
+export { LANGUAGE_LIST } from './languageMeta';
 export { SUPPORTED_LANGUAGE_IDS } from '../lib/languageStorage';
-export { getLanguage };
+export { lessonCatalog, DEFAULT_LESSON_ID, DEFAULT_LANGUAGE_ID };
 
-/** Slide sequence for café ordering lessons */
+export function getLanguage(id) {
+  return getLanguageMeta(id);
+}
+
+/** Slide sequence for story lessons */
 export const LESSON_SLIDE_TYPES = ['intro', 'vocab', 'dialogue', 'tips', 'summary'];
 
 /** Chat prompt categories used for feedback routing */
 export const CHAT_PROMPT_TYPES = ['greeting', 'order', 'size', 'price', 'thanks'];
 
 export const CAFE_LESSON_TEMPLATE = {
-  topic: 'cafe-ordering',
+  topic: 'cafe',
   title: 'Ordering at a Café',
   emoji: '☕',
   slideTypes: LESSON_SLIDE_TYPES,
@@ -24,112 +39,120 @@ export const CAFE_LESSON_TEMPLATE = {
   chatXpPerPrompt: 10,
 };
 
-/**
- * @typedef {Object} VocabItem
- * @property {string} key
- * @property {string} english
- * @property {string} word
- * @property {string} pronunciation
- * @property {string} emoji
- */
-
-/**
- * @typedef {Object} QuizQuestion
- * @property {number} id
- * @property {string} question
- * @property {string} emoji
- * @property {string[]} options
- * @property {number} correct
- * @property {string} explanation
- */
-
-/**
- * @typedef {Object} ChatPrompt
- * @property {number} id
- * @property {string} prompt
- * @property {string} hint
- * @property {string[]} keywords
- * @property {'greeting'|'order'|'size'|'price'|'thanks'} type
- */
-
-/**
- * @typedef {Object} LanguagePack
- * @property {Object} meta - id, name, flag, theme colors, etc.
- * @property {Object} lesson - vocab, dialogue, tips, ids
- * @property {Object} quiz - questions and ids
- * @property {Object} chat - prompts
- */
-
-export function getLessonId(languageId) {
-  return `${CAFE_LESSON_TEMPLATE.topic}-${languageId}`;
+/** @deprecated Use getLessonProgressId(languageId, lessonId) */
+export function getLessonId(languageId, lessonId = DEFAULT_LESSON_ID) {
+  return getLessonProgressId(languageId, lessonId);
 }
 
-export function getQuizId(languageId) {
-  return `quiz-cafe-${languageId}`;
+/** @deprecated Use getQuizProgressId(languageId, lessonId) */
+export function getQuizId(languageId, lessonId = DEFAULT_LESSON_ID) {
+  return getQuizProgressId(languageId, lessonId);
 }
 
 /**
- * Build a normalized content pack for the active language.
- * Components should use this instead of reading raw language objects.
+ * Full lesson topic from catalog (vocabulary, dialogue, quiz, etc.)
  */
-export function getLanguagePack(languageId) {
-  const lang = getLanguage(languageId);
+export function getLessonPack(languageId, lessonId = DEFAULT_LESSON_ID) {
+  return getLessonTopic(languageId, lessonId);
+}
 
+/**
+ * Lessons unlocked by XP with playable content, sorted by level.
+ */
+export function getAvailableLessons(languageId, userXP = 0) {
+  const catalog = getLanguageCatalog(languageId);
+  return Object.values(catalog)
+    .filter(topic => topic && userXP >= (topic.requiredXP ?? 0))
+    .filter(isLessonReady)
+    .sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
+}
+
+/**
+ * Next incomplete lesson in level order, or null if all done.
+ */
+export function getNextLesson(languageId, completedLessonIds = [], userXP = Infinity) {
+  const available = getAvailableLessons(languageId, userXP);
+  const lang = normalizeLanguageId(languageId);
+
+  for (const topic of available) {
+    const progressId = getLessonProgressId(lang, topic.id);
+    if (!completedLessonIds.includes(progressId)) {
+      return topic;
+    }
+  }
+  return null;
+}
+
+/**
+ * Normalize a lesson topic into component-friendly lesson/quiz/chat sections.
+ */
+function buildPackFromTopic(meta, topic, languageId, lessonId) {
   return {
-    meta: {
-      id: lang.id,
-      name: lang.name,
-      nativeName: lang.nativeName,
-      flag: lang.flag,
-      emoji: lang.emoji,
-      speakers: lang.speakers,
-      color: lang.color,
-      borderColor: lang.borderColor,
-      bgColor: lang.bgColor,
-      badgeColor: lang.badgeColor,
-      hoverColor: lang.hoverColor,
-      funFact: lang.funFact,
-      description: lang.description,
-    },
+    meta,
     lesson: {
-      id: getLessonId(lang.id),
-      title: `${CAFE_LESSON_TEMPLATE.title} ${CAFE_LESSON_TEMPLATE.emoji}`,
-      topic: CAFE_LESSON_TEMPLATE.topic,
+      id: getLessonProgressId(languageId, lessonId),
+      lessonKey: lessonId,
+      title: `${topic.title} ${CAFE_LESSON_TEMPLATE.emoji}`,
+      topic: lessonId,
+      world: topic.world,
+      level: topic.level,
+      requiredXP: topic.requiredXP,
       slideTypes: LESSON_SLIDE_TYPES,
       xpReward: CAFE_LESSON_TEMPLATE.lessonXp,
-      vocab: lang.vocab,
-      dialogue: lang.dialogue,
-      tips: lang.tips,
+      vocab: topic.vocabulary,
+      dialogue: topic.dialogue,
+      tips: topic.tips,
     },
     quiz: {
-      id: getQuizId(lang.id),
-      title: `${lang.name} Café Quiz`,
+      id: getQuizProgressId(languageId, lessonId),
+      title: `${meta.name} ${topic.title} Quiz`,
       xpReward: CAFE_LESSON_TEMPLATE.quizXp,
-      questions: lang.quiz,
+      questions: topic.quiz,
     },
     chat: {
-      lessonId: getLessonId(lang.id),
+      lessonId: getLessonProgressId(languageId, lessonId),
       xpPerCorrect: CAFE_LESSON_TEMPLATE.chatXpPerPrompt,
-      prompts: lang.chatPrompts,
+      prompts: topic.chatPrompts,
     },
   };
 }
 
-/** Shorthand accessors for components */
-export function getLessonContent(languageId) {
-  return getLanguagePack(languageId).lesson;
+/**
+ * Backward-compatible pack for Lesson / Quiz / Chat (defaults to café lesson).
+ */
+export function getLanguagePack(languageId, lessonId = DEFAULT_LESSON_ID) {
+  const lang = normalizeLanguageId(languageId);
+  const topicId = normalizeLessonId(lang, lessonId);
+  const meta = getLanguageMeta(lang);
+  const topic = getLessonTopic(lang, topicId);
+
+  return buildPackFromTopic(meta, topic, lang, topicId);
 }
 
-export function getQuizContent(languageId) {
-  return getLanguagePack(languageId).quiz;
+export function getLessonContent(languageId, lessonId = DEFAULT_LESSON_ID) {
+  return getLanguagePack(languageId, lessonId).lesson;
 }
 
-export function getChatContent(languageId) {
-  return getLanguagePack(languageId).chat;
+export function getQuizContent(languageId, lessonId = DEFAULT_LESSON_ID) {
+  return getLanguagePack(languageId, lessonId).quiz;
 }
 
-/** Lookup vocab by semantic key (hello, please, etc.) */
-export function getVocabByKey(languageId, key) {
-  const { vocab } = getLessonContent(languageId);
-  return vocab.find(v => v.key === key);
+export function getChatContent(languageId, lessonId = DEFAULT_LESSON_ID) {
+  return getLanguagePack(languageId, lessonId).chat;
+}
+
+/**
+ * Lookup vocab by semantic key. Supports (languageId, key) or (languageId, lessonId, key).
+ */
+export function getVocabByKey(languageId, lessonIdOrKey, keyMaybe) {
+  let lessonId = DEFAULT_LESSON_ID;
+  let key = lessonIdOrKey;
+
+  if (keyMaybe !== undefined) {
+    lessonId = lessonIdOrKey;
+    key = keyMaybe;
+  }
+
+  const topic = getLessonTopic(languageId, lessonId);
+  return topic.vocabulary?.find(v => v.key === key);
 }
