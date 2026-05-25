@@ -123,6 +123,7 @@ export default function App() {
           <ReviewPractice
             {...sharedProps}
             recordSkillAttempt={game.recordSkillAttempt}
+            updateWordMastery={game.updateWordMastery}
           />
         );
       default:

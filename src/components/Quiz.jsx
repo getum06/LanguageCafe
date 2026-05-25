@@ -49,7 +49,7 @@ export default function Quiz({ state, onNavigate, gainXP, loseHeart, completeQui
     setAnswered(true);
     const isCorrect = idx === question.correct;
     const { skill, wordKey } = getQuizQuestionSkillMeta(question);
-    recordSkillAttempt?.(skill, isCorrect, wordKey);
+    recordSkillAttempt?.(skill, isCorrect, wordKey, lessonKey);
 
     if (isCorrect) {
       setScore(s => s + 1);

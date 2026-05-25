@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getStoredLanguage, setStoredLanguage } from '../lib/languageStorage';
 import { getStoredWorld, getStoredLesson, setStoredWorld, setStoredLesson } from '../lib/selectionStorage';
 import { recordSkillAttempt as applySkillAttempt, createEmptySkillTracking } from '../data/skillTracking';
+import { createEmptyVocabMastery, updateWordMastery as applyWordMastery } from '../data/spacedRepetition';
 
 const DEFAULT_STATE = {
   xp: 0,
@@ -17,6 +18,7 @@ const DEFAULT_STATE = {
   unlockedAreas: ['cozyCafe'],
   sessionRewards: null,
   skillTracking: createEmptySkillTracking(),
+  vocabMastery: createEmptyVocabMastery(),
 };
 
 function loadFromStorage() {
@@ -49,7 +51,12 @@ function loadFromStorage() {
           parsed.streak = 0;
         }
       }
-      return { ...DEFAULT_STATE, ...parsed, skillTracking: parsed.skillTracking ?? createEmptySkillTracking() };
+      return {
+        ...DEFAULT_STATE,
+        ...parsed,
+        skillTracking: parsed.skillTracking ?? createEmptySkillTracking(),
+        vocabMastery: parsed.vocabMastery ?? createEmptyVocabMastery(),
+      };
     }
 
     if (storedLanguage || storedWorld || storedLesson) {
@@ -157,11 +164,13 @@ export function useGameState() {
     });
   }
 
-  function recordSkillAttempt(skillId, isCorrect, wordKey = null) {
+  function recordSkillAttempt(skillId, isCorrect, wordKey = null, lessonId = null) {
     setState(prev => {
       const languageId = prev.selectedLanguage;
       if (!languageId) return prev;
-      return {
+
+      const effectiveLesson = lessonId ?? prev.selectedLesson ?? 'cafe';
+      let next = {
         ...prev,
         skillTracking: applySkillAttempt(
           prev.skillTracking,
@@ -169,6 +178,38 @@ export function useGameState() {
           skillId,
           isCorrect,
           wordKey,
+        ),
+      };
+
+      if (wordKey) {
+        next = {
+          ...next,
+          vocabMastery: applyWordMastery(
+            prev.vocabMastery,
+            languageId,
+            effectiveLesson,
+            wordKey,
+            isCorrect,
+          ),
+        };
+      }
+
+      return next;
+    });
+  }
+
+  function updateWordMastery(lessonId, wordKey, isCorrect) {
+    setState(prev => {
+      const languageId = prev.selectedLanguage;
+      if (!languageId || !wordKey) return prev;
+      return {
+        ...prev,
+        vocabMastery: applyWordMastery(
+          prev.vocabMastery,
+          languageId,
+          lessonId ?? prev.selectedLesson ?? 'cafe',
+          wordKey,
+          isCorrect,
         ),
       };
     });
@@ -225,6 +266,7 @@ export function useGameState() {
     recordSessionXp,
     clearSessionRewards,
     recordSkillAttempt,
+    updateWordMastery,
     completeLesson,
     completeQuiz,
     unlockArea,

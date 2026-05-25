@@ -1,13 +1,30 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { getLanguage } from '../data/languages';
 import { getReviewRecommendations } from '../data/skillReview';
+import { getDueReviewWords, getMasteryLabel, MAX_MASTERY_LEVEL } from '../data/spacedRepetition';
 import { SKILL_EMOJI } from '../data/skillTracking';
 
-function ReviewVocabCard({ word, onKnowIt, onStillLearning }) {
+function MasteryStars({ level }) {
+  return (
+    <span className="text-xs text-amber-500 font-black tracking-tight" title={`Mastery ${level}/${MAX_MASTERY_LEVEL}`}>
+      {getMasteryLabel(level)}
+    </span>
+  );
+}
+
+function ReviewVocabCard({ entry, onKnowIt, onStillLearning }) {
   const [flipped, setFlipped] = useState(false);
+  const word = entry.vocab;
 
   return (
-    <div className="anime-card p-4 border-2 border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50">
+    <div className="anime-card p-4 border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-pink-50">
+      <div className="flex items-center justify-between mb-2">
+        <MasteryStars level={entry.masteryLevel} />
+        <span className="text-[10px] font-bold text-gray-400">
+          Lv.{entry.masteryLevel} · {entry.timesCorrect}✓ {entry.timesWrong}✗
+        </span>
+      </div>
+
       <button
         type="button"
         onClick={() => setFlipped(f => !f)}
@@ -32,14 +49,22 @@ function ReviewVocabCard({ word, onKnowIt, onStillLearning }) {
       </button>
 
       <p className="text-xs text-gray-500 font-bold mb-2 text-center">
-        From: {word.lessonTitle}
+        {word.lessonTitle}
       </p>
 
       <div className="grid grid-cols-2 gap-2">
-        <button type="button" onClick={() => onStillLearning(word)} className="btn-secondary py-2 text-xs">
+        <button
+          type="button"
+          onClick={() => onStillLearning(entry)}
+          className="btn-secondary py-2 text-xs"
+        >
           Still learning
         </button>
-        <button type="button" onClick={() => onKnowIt(word)} className="btn-mint py-2 text-xs">
+        <button
+          type="button"
+          onClick={() => onKnowIt(entry)}
+          className="btn-mint py-2 text-xs"
+        >
           Got it! ✓
         </button>
       </div>
@@ -47,21 +72,36 @@ function ReviewVocabCard({ word, onKnowIt, onStillLearning }) {
   );
 }
 
-export default function ReviewPractice({ state, onNavigate, recordSkillAttempt }) {
+export default function ReviewPractice({ state, onNavigate, recordSkillAttempt, updateWordMastery }) {
   const language = state.selectedLanguage ? getLanguage(state.selectedLanguage) : null;
   const review = getReviewRecommendations(state.skillTracking, state.selectedLanguage);
-  const [words, setWords] = useState(review.words);
-  const [reviewed, setReviewed] = useState(0);
 
-  function handleKnowIt(word) {
-    recordSkillAttempt?.('vocabulary', true, word.key);
-    setWords(prev => prev.filter(w => w.key !== word.key));
-    setReviewed(r => r + 1);
+  const initialDue = useMemo(
+    () => getDueReviewWords(state.vocabMastery, state.selectedLanguage),
+    [state.vocabMastery, state.selectedLanguage],
+  );
+
+  const [dueEntries, setDueEntries] = useState(initialDue);
+  const [sessionStats, setSessionStats] = useState({ correct: 0, wrong: 0 });
+
+  function removeEntry(entry) {
+    setDueEntries(prev =>
+      prev.filter(e => e.wordKey !== entry.wordKey || e.lessonId !== entry.lessonId),
+    );
   }
 
-  function handleStillLearning(word) {
-    recordSkillAttempt?.('vocabulary', false, word.key);
-    setReviewed(r => r + 1);
+  function handleKnowIt(entry) {
+    updateWordMastery?.(entry.lessonId, entry.wordKey, true);
+    recordSkillAttempt?.('vocabulary', true, entry.wordKey, entry.lessonId);
+    removeEntry(entry);
+    setSessionStats(s => ({ ...s, correct: s.correct + 1 }));
+  }
+
+  function handleStillLearning(entry) {
+    updateWordMastery?.(entry.lessonId, entry.wordKey, false);
+    recordSkillAttempt?.('vocabulary', false, entry.wordKey, entry.lessonId);
+    removeEntry(entry);
+    setSessionStats(s => ({ ...s, wrong: s.wrong + 1 }));
   }
 
   if (!language) {
@@ -75,15 +115,15 @@ export default function ReviewPractice({ state, onNavigate, recordSkillAttempt }
     );
   }
 
-  if (words.length === 0) {
+  if (dueEntries.length === 0) {
     return (
       <div className="space-y-5 text-center py-8">
         <div className="text-5xl animate-bounce-soft">🌟</div>
         <h1 className="font-black text-2xl text-cafe-brown">All caught up!</h1>
         <p className="text-gray-500 font-medium text-sm max-w-sm mx-auto">
-          {reviewed > 0
-            ? `You reviewed ${reviewed} card${reviewed === 1 ? '' : 's'} this session. Great work!`
-            : 'No missed vocabulary to review right now. Take a quiz or chat to track your skills!'}
+          {sessionStats.correct + sessionStats.wrong > 0
+            ? `Session: ${sessionStats.correct} mastered, ${sessionStats.wrong} to retry soon.`
+            : 'No words due today. Complete a quiz or chat to add words to your review deck!'}
         </p>
         <button type="button" onClick={() => onNavigate('home')} className="btn-primary">
           🏠 Back to Home
@@ -104,17 +144,24 @@ export default function ReviewPractice({ state, onNavigate, recordSkillAttempt }
         </button>
         <div className="flex-1">
           <h1 className="font-black text-xl text-cafe-brown">
-            {language.flag} Weakness Review
+            {language.flag} Spaced Review
           </h1>
           <p className="text-xs text-gray-500 font-medium">
-            Practice words you missed · {words.length} card{words.length === 1 ? '' : 's'} left
+            {dueEntries.length} word{dueEntries.length === 1 ? '' : 's'} due today
           </p>
         </div>
       </div>
 
+      <div className="anime-card p-3 bg-violet-50 border-violet-200 text-sm font-medium text-violet-800">
+        <p className="font-black mb-1">📅 Spaced repetition</p>
+        <p className="text-xs text-violet-600">
+          Got it → review later. Still learning → practice again today.
+        </p>
+      </div>
+
       {review.weakSkills.length > 0 && (
         <div className="anime-card p-3 bg-orange-50 border-orange-200">
-          <p className="text-xs font-black text-orange-700 mb-2">Focus areas</p>
+          <p className="text-xs font-black text-orange-700 mb-2">Weak skills</p>
           <div className="flex flex-wrap gap-2">
             {review.weakSkills.map(skill => (
               <span
@@ -129,10 +176,10 @@ export default function ReviewPractice({ state, onNavigate, recordSkillAttempt }
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {words.map(word => (
+        {dueEntries.map(entry => (
           <ReviewVocabCard
-            key={word.key}
-            word={word}
+            key={`${entry.lessonId}:${entry.wordKey}`}
+            entry={entry}
             onKnowIt={handleKnowIt}
             onStillLearning={handleStillLearning}
           />
