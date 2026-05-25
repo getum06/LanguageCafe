@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getQuizQuestionSkillMeta } from '../data/skillReview';
 import { getLanguagePack, resolveLessonKey } from '../data/lessonContent';
 import { CHARACTERS } from '../data/characters';
 import { getCompanionFeedback } from '../data/companionFeedback';
@@ -9,7 +10,7 @@ function ConfettiPiece({ style }) {
   return <div className="absolute w-3 h-3 rounded-sm animate-bounce-soft pointer-events-none" style={style} />;
 }
 
-export default function Quiz({ state, onNavigate, gainXP, loseHeart, completeQuiz, recordSessionXp }) {
+export default function Quiz({ state, onNavigate, gainXP, loseHeart, completeQuiz, recordSessionXp, recordSkillAttempt }) {
   const lessonKey = resolveLessonKey(state);
   const pack = getLanguagePack(state.selectedLanguage, lessonKey);
   const { meta: language, lesson, quiz } = pack;
@@ -44,6 +45,8 @@ export default function Quiz({ state, onNavigate, gainXP, loseHeart, completeQui
     setSelected(idx);
     setAnswered(true);
     const isCorrect = idx === question.correct;
+    const { skill, wordKey } = getQuizQuestionSkillMeta(question);
+    recordSkillAttempt?.(skill, isCorrect, wordKey, lessonKey);
     const feedbackContext = {
       languageName: language.name,
       languageFlag: language.flag,

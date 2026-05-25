@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { CHARACTERS } from '../data/characters';
 import { getLanguage } from '../data/languages';
 import { getCompanionFeedback } from '../data/companionFeedback';
+import { getReviewRecommendations } from '../data/skillReview';
+import { getDueReviewWords } from '../data/spacedRepetition';
+import { SKILL_EMOJI } from '../data/skillTracking';
 import LanguageSwitcher from './LanguageSwitcher';
 
 const FLOATING_ITEMS = ['☕', '🌸', '✨', '🍰', '⭐', '💕', '🧁', '🌙'];
@@ -41,13 +44,22 @@ export default function HomePage({ state, onNavigate, selectLanguage }) {
     return greets[Math.floor(Math.random() * greets.length)];
   });
 
+  const review = language
+    ? getReviewRecommendations(state.skillTracking, state.selectedLanguage)
+    : { weakSkills: [], words: [], hasReview: false, recommendations: [] };
+
+  const dueWords = language
+    ? getDueReviewWords(state.vocabMastery, state.selectedLanguage)
+    : [];
+
   const companionId = state.selectedCharacter;
+  const dueWordCount = dueWords.length || review.words.length;
   const feedbackContext = {
     languageName: language?.name,
     languageFlag: language?.flag,
     streak: state.streak,
     level,
-    dueWordCount: Math.max(0, state.completedLessons.length - state.completedQuizzes.length),
+    dueWordCount,
   };
 
   const [streakFeedback] = useState(() =>
@@ -63,7 +75,7 @@ export default function HomePage({ state, onNavigate, selectLanguage }) {
       : null,
   );
 
-  const needsReview = feedbackContext.dueWordCount > 0;
+  const needsReview = dueWordCount > 0 || review.weakSkills.length > 0;
   const [reviewFeedback] = useState(() =>
     companionId && needsReview
       ? getCompanionFeedback(companionId, 'reviewNeeded', feedbackContext)
@@ -195,23 +207,104 @@ export default function HomePage({ state, onNavigate, selectLanguage }) {
         </button>
       )}
 
-      {/* Companion review reminder */}
-      {character && reviewFeedback && needsReview && (
-        <div className={`anime-card p-4 ${character.bgColor} border-2 ${character.borderColor}`}>
-          <div className="flex items-start gap-3">
-            <span className="text-3xl flex-shrink-0">{character.emoji}</span>
-            <div>
-              <p className="font-bold text-gray-700 text-sm">{reviewFeedback}</p>
-              <button
-                type="button"
-                onClick={() => onNavigate('world-map')}
-                className="mt-2 text-xs font-black text-purple-600 hover:underline"
+      {/* Words to Review Today — spaced repetition */}
+      {language && dueWords.length > 0 && (
+        <div className="anime-card p-4 border-2 border-violet-300 bg-gradient-to-br from-violet-50 to-purple-50">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-2xl">📅</span>
+            <h3 className="font-black text-violet-900 text-sm">Words to Review Today</h3>
+          </div>
+          {character && reviewFeedback && (
+            <p className="text-sm font-bold text-violet-800 mb-3 bg-white/60 rounded-2xl px-3 py-2">
+              {character.emoji} {reviewFeedback}
+            </p>
+          )}
+          <p className="text-sm font-bold text-violet-700 mb-3">
+            {dueWords.length} word{dueWords.length === 1 ? '' : 's'} ready for spaced review
+          </p>
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {dueWords.slice(0, 6).map(entry => (
+              <span
+                key={`${entry.lessonId}:${entry.wordKey}`}
+                className="text-xs font-bold px-2 py-1 rounded-lg bg-white/80 border border-violet-200 text-gray-700"
               >
-                Pick a lesson to review →
-              </button>
+                {entry.vocab?.emoji} {entry.vocab?.word ?? entry.wordKey}
+              </span>
+            ))}
+            {dueWords.length > 6 && (
+              <span className="text-xs font-bold text-violet-500 self-center">
+                +{dueWords.length - 6} more
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate('review-practice')}
+            className="btn-primary w-full py-3"
+          >
+            🃏 Start Review ({dueWords.length})
+          </button>
+        </div>
+      )}
+
+      {/* Skill review recommendations */}
+      {language && review.weakSkills.length > 0 && (
+        <div className="anime-card p-4 border-2 border-orange-300 bg-gradient-to-br from-orange-50 to-amber-50">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-2xl">🎯</span>
+            <h3 className="font-black text-orange-800 text-sm">Review recommended</h3>
+          </div>
+          {character && reviewFeedback && dueWords.length === 0 && (
+            <p className="text-sm font-bold text-orange-800 mb-3 bg-white/60 rounded-2xl px-3 py-2">
+              {character.emoji} {reviewFeedback}
+            </p>
+          )}
+          <div className="space-y-2 mb-4">
+            {review.weakSkills.map(skill => (
+              <div
+                key={skill.id}
+                className="flex items-center justify-between gap-2 bg-white/70 rounded-xl px-3 py-2 border border-orange-200"
+              >
+                <span className="text-sm font-bold text-gray-700">
+                  {SKILL_EMOJI[skill.id]} {skill.label}
+                </span>
+                <span className="text-xs font-black text-orange-600">
+                  {skill.accuracy}% · Review recommended
+                </span>
+              </div>
+            ))}
+          </div>
+          {review.words.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onNavigate('review-practice')}
+              className="btn-primary w-full py-3"
+            >
+              🃏 Review Practice ({review.words.length} word{review.words.length === 1 ? '' : 's'})
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Review practice when missed words exist but no weak skill banner yet */}
+      {language && review.weakSkills.length === 0 && review.words.length > 0 && dueWords.length === 0 && (
+        <button
+          type="button"
+          onClick={() => onNavigate('review-practice')}
+          className="w-full anime-card p-4 border-2 border-amber-200 bg-amber-50 text-left hover:shadow-lg transition-shadow"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">🃏</span>
+            <div>
+              <h3 className="font-black text-amber-800 text-sm">Review Practice</h3>
+              <p className="text-xs text-gray-500 font-medium">
+                {character && reviewFeedback
+                  ? `${character.emoji} ${reviewFeedback}`
+                  : `${review.words.length} missed vocabulary card${review.words.length === 1 ? '' : 's'} to review`}
+              </p>
             </div>
           </div>
-        </div>
+        </button>
       )}
 
       {/* XP Progress */}

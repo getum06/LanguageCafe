@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { getChatPromptSkillMeta } from '../data/skillReview';
 import { getLanguagePack, getVocabByKey, resolveLessonKey } from '../data/lessonContent';
 import { getWorld } from '../data/worlds';
 import { CHARACTERS } from '../data/characters';
@@ -83,7 +84,7 @@ function companionContext(language, lesson, sceneLabel) {
   };
 }
 
-export default function ChatPractice({ state, onNavigate, gainXP, recordSessionXp }) {
+export default function ChatPractice({ state, onNavigate, gainXP, recordSessionXp, recordSkillAttempt }) {
   const lessonKey = resolveLessonKey(state);
   const pack = getLanguagePack(state.selectedLanguage, lessonKey);
   const { meta: language, lesson, chat } = pack;
@@ -136,7 +137,16 @@ export default function ChatPractice({ state, onNavigate, gainXP, recordSessionX
 
     setTimeout(() => {
       const isCorrect = result === 'correct';
+      const isPartial = result === 'partial';
+      const { skill, wordKey } = getChatPromptSkillMeta(prompt);
       const ctx = companionContext(language, lesson, sceneLabel);
+
+      if (isCorrect) {
+        recordSkillAttempt?.(skill, true, wordKey, lessonKey);
+      } else if (isPartial || result === 'empty') {
+        recordSkillAttempt?.(skill, false, wordKey, lessonKey);
+      }
+
       const langFeedback = buildFeedback(language.id, language.name, lessonKey, prompt.type, result);
       const charMsg = character
         ? getCompanionFeedback(
