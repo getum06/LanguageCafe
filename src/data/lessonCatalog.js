@@ -11,13 +11,32 @@ export const DEFAULT_LESSON_ID = 'cafe';
 /** Lesson topic order for progression */
 export const LESSON_TOPIC_ORDER = ['cafe', 'school', 'market'];
 
-function createLessonStub(id, title, world, level, requiredXP) {
+/** Default XP rewards per lesson topic */
+export const LESSON_XP = {
+  lesson: 50,
+  quiz: 75,
+  chatPerPrompt: 10,
+};
+
+/** Emoji per lesson topic */
+export const LESSON_EMOJI = {
+  cafe: '☕',
+  school: '📚',
+  market: '🏮',
+};
+
+function createLessonStub(id, title, description, world, level, requiredXP) {
   return {
     id,
     title,
+    description,
     world,
     level,
     requiredXP,
+    lessonXp: LESSON_XP.lesson,
+    quizXp: LESSON_XP.quiz,
+    chatXpPerPrompt: LESSON_XP.chatPerPrompt,
+    emoji: LESSON_EMOJI[id] ?? '📖',
     vocabulary: [],
     dialogue: [],
     tips: [],
@@ -30,9 +49,14 @@ function cafeLessonFromLegacy(raw) {
   return {
     id: 'cafe',
     title: 'Café Ordering',
+    description: 'Order drinks, greet the barista, and use polite phrases.',
     world: 'cozyCafe',
     level: 1,
     requiredXP: 0,
+    lessonXp: LESSON_XP.lesson,
+    quizXp: LESSON_XP.quiz,
+    chatXpPerPrompt: LESSON_XP.chatPerPrompt,
+    emoji: LESSON_EMOJI.cafe,
     vocabulary: raw.vocab ?? [],
     dialogue: raw.dialogue ?? [],
     tips: raw.tips ?? [],
@@ -45,16 +69,51 @@ function buildLanguageLessons(langId) {
   const raw = LANGUAGES_WITH_CONTENT[langId];
   if (!raw) {
     return {
-      cafe: createLessonStub('cafe', 'Café Ordering', 'cozyCafe', 1, 0),
-      school: createLessonStub('school', 'School Basics', 'animeSchool', 2, 150),
-      market: createLessonStub('market', 'Night Market', 'nightMarket', 3, 300),
+      cafe: createLessonStub(
+        'cafe',
+        'Café Ordering',
+        'Order drinks, greet the barista, and use polite phrases.',
+        'cozyCafe',
+        1,
+        0,
+      ),
+      school: createLessonStub(
+        'school',
+        'School Basics',
+        'Classroom phrases, making friends, and daily school life.',
+        'animeSchool',
+        2,
+        150,
+      ),
+      market: createLessonStub(
+        'market',
+        'Night Market',
+        'Shop for food, ask prices, and practice bargaining.',
+        'nightMarket',
+        3,
+        300,
+      ),
     };
   }
 
   return {
     cafe: cafeLessonFromLegacy(raw),
-    school: createLessonStub('school', 'School Basics', 'animeSchool', 2, 150),
-    market: createLessonStub('market', 'Night Market', 'nightMarket', 3, 300),
+    school: createLessonStub(
+      'school',
+      'School Basics',
+      'Classroom phrases, making friends, and daily school life.',
+      'animeSchool',
+      2,
+      150,
+    ),
+    market: createLessonStub(
+      'market',
+      'Night Market',
+      'Shop for food, ask prices, and practice bargaining.',
+      'nightMarket',
+      3,
+      300,
+    ),
   };
 }
 
@@ -99,4 +158,12 @@ export function getQuizProgressId(languageId, lessonId = DEFAULT_LESSON_ID) {
 
 export function isLessonReady(topic) {
   return Array.isArray(topic?.vocabulary) && topic.vocabulary.length > 0;
+}
+
+/** All lessons belonging to a world for the active language */
+export function getLessonsInWorld(languageId, worldId) {
+  const catalog = getLanguageCatalog(languageId);
+  return Object.values(catalog)
+    .filter(topic => topic?.world === worldId)
+    .sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
 }

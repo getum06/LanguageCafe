@@ -5,15 +5,18 @@ import { getLanguageMeta } from './languageMeta';
 import {
   DEFAULT_LANGUAGE_ID,
   DEFAULT_LESSON_ID,
+  LESSON_XP,
   getLanguageCatalog,
   getLessonProgressId,
   getLessonTopic,
+  getLessonsInWorld,
   getQuizProgressId,
   isLessonReady,
   lessonCatalog,
   normalizeLanguageId,
   normalizeLessonId,
 } from './lessonCatalog';
+import { getWorld, isWorldUnlocked } from './worlds';
 
 export { LANGUAGE_LIST } from './languageMeta';
 export { SUPPORTED_LANGUAGE_IDS } from '../lib/languageStorage';
@@ -25,19 +28,8 @@ export function getLanguage(id) {
 
 /** Slide sequence for story lessons */
 export const LESSON_SLIDE_TYPES = ['intro', 'vocab', 'dialogue', 'tips', 'summary'];
-
-/** Chat prompt categories used for feedback routing */
 export const CHAT_PROMPT_TYPES = ['greeting', 'order', 'size', 'price', 'thanks'];
-
-export const CAFE_LESSON_TEMPLATE = {
-  topic: 'cafe',
-  title: 'Ordering at a Café',
-  emoji: '☕',
-  slideTypes: LESSON_SLIDE_TYPES,
-  lessonXp: 50,
-  quizXp: 75,
-  chatXpPerPrompt: 10,
-};
+export { LESSON_XP };
 
 /** @deprecated Use getLessonProgressId(languageId, lessonId) */
 export function getLessonId(languageId, lessonId = DEFAULT_LESSON_ID) {
@@ -87,18 +79,21 @@ export function getNextLesson(languageId, completedLessonIds = [], userXP = Infi
  * Normalize a lesson topic into component-friendly lesson/quiz/chat sections.
  */
 function buildPackFromTopic(meta, topic, languageId, lessonId) {
+  const emoji = topic.emoji ?? '📖';
   return {
     meta,
     lesson: {
       id: getLessonProgressId(languageId, lessonId),
       lessonKey: lessonId,
-      title: `${topic.title} ${CAFE_LESSON_TEMPLATE.emoji}`,
+      title: topic.title,
+      description: topic.description,
+      emoji,
       topic: lessonId,
       world: topic.world,
       level: topic.level,
       requiredXP: topic.requiredXP,
       slideTypes: LESSON_SLIDE_TYPES,
-      xpReward: CAFE_LESSON_TEMPLATE.lessonXp,
+      xpReward: topic.lessonXp ?? LESSON_XP.lesson,
       vocab: topic.vocabulary,
       dialogue: topic.dialogue,
       tips: topic.tips,
@@ -106,19 +101,76 @@ function buildPackFromTopic(meta, topic, languageId, lessonId) {
     quiz: {
       id: getQuizProgressId(languageId, lessonId),
       title: `${meta.name} ${topic.title} Quiz`,
-      xpReward: CAFE_LESSON_TEMPLATE.quizXp,
+      xpReward: topic.quizXp ?? LESSON_XP.quiz,
       questions: topic.quiz,
     },
     chat: {
       lessonId: getLessonProgressId(languageId, lessonId),
-      xpPerCorrect: CAFE_LESSON_TEMPLATE.chatXpPerPrompt,
+      xpPerCorrect: topic.chatXpPerPrompt ?? LESSON_XP.chatPerPrompt,
       prompts: topic.chatPrompts,
     },
   };
 }
 
 /**
- * Backward-compatible pack for Lesson / Quiz / Chat (defaults to café lesson).
+ * Lesson cards for LessonSelect — includes lock/completion status.
+ */
+export function getLessonsForWorld(worldId, languageId, userXP = 0, completedLessonIds = []) {
+  const lang = normalizeLanguageId(languageId);
+  const meta = getLanguageMeta(lang);
+  const world = getWorld(worldId);
+  const worldUnlocked = isWorldUnlocked(worldId, userXP);
+
+  return getLessonsInWorld(lang, worldId).map(topic => {
+    const progressId = getLessonProgressId(lang, topic.id);
+    const xpUnlocked = userXP >= (topic.requiredXP ?? 0);
+    const ready = isLessonReady(topic);
+    const completed = completedLessonIds.includes(progressId);
+    const unlocked = worldUnlocked && xpUnlocked && ready;
+
+    let lockReason = null;
+    if (!worldUnlocked && world) {
+      lockReason = `Unlock ${world.name} first (${world.unlockXP} XP)`;
+    } else if (!xpUnlocked) {
+      lockReason = `Need ${Math.max(0, topic.requiredXP - userXP)} more XP`;
+    } else if (!ready) {
+      lockReason = 'Coming soon';
+    }
+
+    return {
+      id: topic.id,
+      progressId,
+      title: topic.title,
+      description: topic.description,
+      emoji: topic.emoji ?? '📖',
+      world: topic.world,
+      level: topic.level,
+      requiredXP: topic.requiredXP,
+      xpReward: topic.lessonXp ?? LESSON_XP.lesson,
+      quizXpReward: topic.quizXp ?? LESSON_XP.quiz,
+      unlocked,
+      completed,
+      lockReason,
+      language: {
+        id: meta.id,
+        name: meta.name,
+        flag: meta.flag,
+        badgeColor: meta.badgeColor,
+        borderColor: meta.borderColor,
+      },
+    };
+  });
+}
+
+/**
+ * Resolve active lesson key from game state (falls back to café).
+ */
+export function resolveLessonKey(state) {
+  return normalizeLessonId(state?.selectedLanguage, state?.selectedLesson);
+}
+
+/**
+ * Backward-compatible pack for Lesson / Quiz / Chat.
  */
 export function getLanguagePack(languageId, lessonId = DEFAULT_LESSON_ID) {
   const lang = normalizeLanguageId(languageId);

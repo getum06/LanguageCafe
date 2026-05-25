@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getLanguagePack } from '../data/lessonContent';
+import { getLanguagePack, resolveLessonKey } from '../data/lessonContent';
 import { CHARACTERS } from '../data/characters';
 
 function getRandMsg(arr) {
@@ -12,9 +12,10 @@ function ConfettiPiece({ style }) {
   return <div className="absolute w-3 h-3 rounded-sm animate-bounce-soft pointer-events-none" style={style} />;
 }
 
-export default function Quiz({ state, onNavigate, gainXP, loseHeart, completeQuiz }) {
-  const pack = getLanguagePack(state.selectedLanguage);
-  const { meta: language, quiz } = pack;
+export default function Quiz({ state, onNavigate, gainXP, loseHeart, completeQuiz, recordSessionXp }) {
+  const lessonKey = resolveLessonKey(state);
+  const pack = getLanguagePack(state.selectedLanguage, lessonKey);
+  const { meta: language, lesson, quiz } = pack;
   const quizId = quiz.id;
   const questions = quiz.questions;
 
@@ -61,8 +62,9 @@ export default function Quiz({ state, onNavigate, gainXP, loseHeart, completeQui
     const finalScore = score + (selected === question.correct ? 1 : 0);
 
     if (isLastQ) {
-      const xpEarned = Math.round((finalScore / questions.length) * 75);
+      const xpEarned = Math.round((finalScore / questions.length) * quiz.xpReward);
       gainXP(xpEarned);
+      recordSessionXp?.('quiz', xpEarned);
       if (!state.completedQuizzes.includes(quizId)) completeQuiz(quizId);
       setFinished(true);
     } else {
@@ -76,7 +78,7 @@ export default function Quiz({ state, onNavigate, gainXP, loseHeart, completeQui
   const isCorrectAnswer = answered && selected === question.correct;
   const finalScore = score + (finished && selected === question?.correct ? 1 : 0);
   const percentage = Math.round(finalScore / questions.length * 100);
-  const xpEarned = Math.round((finalScore / questions.length) * 75);
+  const xpEarned = Math.round((finalScore / questions.length) * quiz.xpReward);
 
   /* ── Results screen ── */
   if (finished) {
@@ -141,7 +143,7 @@ export default function Quiz({ state, onNavigate, gainXP, loseHeart, completeQui
           <div className="flex items-center gap-2">
             <span>{language.flag}</span>
             <h1 className="font-black text-lg text-cafe-brown leading-tight">
-              {language.name} Quiz ☕
+              {language.name} Quiz — {lesson.title}
             </h1>
           </div>
           <p className="text-xs text-gray-400 font-bold">Question {currentQ + 1} of {questions.length}</p>

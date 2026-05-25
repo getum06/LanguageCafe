@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { getWorlds, isWorldUnlocked } from '../data/worlds';
-import { isLessonReady } from '../data/lessonCatalog';
-import { getLessonPack } from '../data/lessonContent';
 
 function MapPath() {
   return (
@@ -125,26 +123,24 @@ function WorldListCard({ world, onSelect }) {
   );
 }
 
-export default function WorldMap({ state, onNavigate }) {
+export default function WorldMap({ state, onNavigate, selectWorld }) {
   const worlds = getWorlds(state.xp);
   const [selectedWorld, setSelectedWorld] = useState(null);
 
-  function handleWorldClick(world) {
-    if (!isWorldUnlocked(world.id, state.xp)) return;
-    setSelectedWorld(prev => (prev?.id === world.id ? null : world));
+  function openWorld(world) {
+    selectWorld(world.id);
+    onNavigate('lesson-select');
   }
 
-  function handleStartLesson() {
-    if (!selectedWorld?.lessonKey) return;
-    const topic = getLessonPack(state.selectedLanguage, selectedWorld.lessonKey);
-    if (isLessonReady(topic)) {
-      onNavigate('lesson');
+  function handleWorldClick(world) {
+    if (isWorldUnlocked(world.id, state.xp)) {
+      openWorld(world);
+    } else {
+      setSelectedWorld(prev => (prev?.id === world.id ? null : world));
     }
   }
 
   const selectedUnlocked = selectedWorld && isWorldUnlocked(selectedWorld.id, state.xp);
-  const hasPlayableLesson = selectedWorld?.lessonKey
-    && isLessonReady(getLessonPack(state.selectedLanguage, selectedWorld.lessonKey));
 
   return (
     <div className="space-y-6">
@@ -226,15 +222,9 @@ export default function WorldMap({ state, onNavigate }) {
               )}
 
               {selectedUnlocked ? (
-                hasPlayableLesson ? (
-                  <button type="button" onClick={handleStartLesson} className="btn-primary">
-                    📖 Start Lesson →
-                  </button>
-                ) : (
-                  <button type="button" disabled className="btn-primary opacity-70 cursor-not-allowed">
-                    🔜 Coming Soon!
-                  </button>
-                )
+                <button type="button" onClick={() => openWorld(selectedWorld)} className="btn-primary">
+                  📖 Browse Lessons →
+                </button>
               ) : (
                 <div className="bg-white/70 rounded-2xl p-3 border border-gray-200 backdrop-blur-sm">
                   <p className="text-gray-600 font-bold text-sm flex items-center gap-2">
